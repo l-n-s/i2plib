@@ -91,7 +91,7 @@ import i2plib
 
 loop = asyncio.get_event_loop()
 # making your local web server available in the I2P network
-asyncio.ensure_future(i2plib.server_tunnel(("127.0.0.1", 80))
+asyncio.ensure_future(i2plib.server_tunnel(("127.0.0.1", 80)))
 
 try:
     loop.run_forever()
@@ -109,7 +109,7 @@ import i2plib
 
 loop = asyncio.get_event_loop()
 # bind irc.echelon.i2p to 127.0.0.1:6669
-asyncio.ensure_future(i2plib.client_tunnel(("127.0.0.1", 6669), "irc.echelon.i2p")
+asyncio.ensure_future(i2plib.client_tunnel(("127.0.0.1", 6669), "irc.echelon.i2p"))
 
 try:
     loop.run_forever()
