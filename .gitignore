@@ -1,0 +1,5 @@
+i2plib.egg-info
+__pycache__
+*.pyc
+Pipfile
+Pipfile.lock
