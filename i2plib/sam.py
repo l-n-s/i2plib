@@ -4,6 +4,7 @@ from hashlib import sha256
 import struct
 import random
 import string
+import re
 
 from .exceptions import SAM_EXCEPTIONS
 
@@ -11,9 +12,12 @@ I2P_B64_CHARS = "-~"
 
 SAM_BUFSIZE = 4096
 DEFAULT_ADDRESS = ("127.0.0.1", 7656)
-DEFAULT_MIN_VER = "3.0"
-DEFAULT_MAX_VER = "3.0"
+DEFAULT_MIN_VER = "3.1"
+DEFAULT_MAX_VER = "3.1"
 TRANSIENT_DESTINATION = "TRANSIENT"
+
+VALID_BASE32_ADDRESS = re.compile(r"^([a-zA-Z0-9]{52}).b32.i2p$")
+VALID_BASE64_ADDRESS = re.compile(r"^([a-zA-Z0-9-~=]{516,528})$")
 
 class Answer(object):
     """Parse answer from SAM bridge to an object"""
@@ -103,7 +107,10 @@ def dest_generate(signature_type):
 
 class Destination(object):
     """I2P destination
-    https://geti2p.net/en/docs/spec/common-structures#type_Destination
+
+    https://geti2p.net/spec/common-structures#destination
+
+    :param data: (optional) Base64 encoded data or binary data 
     """
 
     ECDSA_SHA256_P256 = 1
@@ -114,7 +121,11 @@ class Destination(object):
     default_sig_type = EdDSA_SHA512_Ed25519
 
     def __init__(self, data=None):
-        self.data = bytes()
+        #: Binary private key data
+        self.data = bytes() 
+        #: Base64 encoded private key data
+        self.base64 = ""    
+        
         if data:
             if type(data) == bytes:
                 self.data = data
@@ -129,17 +140,30 @@ class Destination(object):
 
     @property
     def base32(self):
+        """Base32 destination hash of this destination"""
         desthash = sha256(self.data).digest()
         return b32encode(desthash).decode()[:52].lower()
     
 class PrivateKey(object):
-    """I2P private key"""
+    """I2P private key
+
+    https://geti2p.net/spec/common-structures#keysandcert
+
+    :param data: (optional) Base64 encoded data or binary data 
+    :param path: (optional) Path to a file with binary private key data
+    """
     _pubkey_size = 256
     _signkey_size = 128
     _min_cert_size = 3
 
     def __init__(self, data=None, path=None):
-        self.data = bytes()
+        #: Binary private key data
+        self.data = bytes() 
+        #: Base64 encoded private key data
+        self.base64 = ""    
+        #: i2plib.Destination object of the private key
+        self.destination = None    
+
         if path:
             with open(path, "rb") as f: data = f.read()
         if data:

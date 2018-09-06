@@ -3,7 +3,6 @@ import asyncio
 from urllib.parse import urlparse
 
 import i2plib
-import i2plib.utils
 
 async def http_get(sam_address, loop, session_name, url):
     url = urlparse(url)
@@ -38,7 +37,7 @@ async def wget(sam_address, loop, url):
     print(res)
 
 if __name__ == "__main__":
-    sam_address = i2plib.utils.get_sam_address()
+    sam_address = i2plib.get_sam_address()
 
     if len(sys.argv) == 2:
         url = sys.argv[1] 

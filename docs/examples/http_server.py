@@ -18,7 +18,7 @@ def serve_directory(server_address, path):
         httpd.serve_forever()
 
 def main(args):
-    sam_address = i2plib.utils.get_sam_address()
+    sam_address = i2plib.get_sam_address()
     server_address = ('127.0.0.1', i2plib.utils.get_free_port())
 
     if not os.path.isdir(args.web_directory):

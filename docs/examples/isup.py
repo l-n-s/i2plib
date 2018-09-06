@@ -3,8 +3,6 @@ import sys
 import asyncio
 
 import i2plib
-import i2plib.exceptions
-import i2plib.utils
 
 async def check_peer(sam_address, loop, session_name, domain):
     try:
@@ -12,7 +10,7 @@ async def check_peer(sam_address, loop, session_name, domain):
                                           sam_address=sam_address, loop=loop)
         w.close()
         return (domain, "up")
-    except i2plib.exceptions.CantReachPeer:
+    except i2plib.CantReachPeer:
         return (domain, "down")
 
 
@@ -30,7 +28,7 @@ async def isup(sam_address, loop, domains):
         print("{} is {}".format(*r))
 
 if __name__ == "__main__":
-    sam_address = i2plib.utils.get_sam_address()
+    sam_address = i2plib.get_sam_address()
 
 
     if len(sys.argv) >= 2:

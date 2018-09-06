@@ -28,7 +28,26 @@ async def proxy_data(reader, writer):
 async def client_tunnel(local_address, remote_destination, loop=None, 
                             private_key=None, session_name=None,
                             sam_address=i2plib.sam.DEFAULT_ADDRESS):
-    """Add client tunnel to event loop"""
+    """Run a client tunnel in the event loop.
+
+    If you run a client tunnel with a local address ("127.0.0.1", 6668) and
+    a remote destination "irc.echelon.i2p", all connections to 127.0.0.1:6668 
+    will be proxied to irc.echelon.i2p.
+
+    :param local_address: A local address to bind a remote destination to. E.g.
+                        ("127.0.0.1", 6668)
+    :param remote_destination: Remote I2P destination, can be either .i2p 
+                        domain, .b32.i2p address, base64 destination or 
+                        i2plib.Destination instance
+    :param session_name: (optional) Session nick name. A new session is created
+                        if not specified.
+    :param private_key: (optional) Private key to use in this session. Can be 
+                        a base64 encoded string, i2plib.sam.PrivateKey instance
+                        or None. TRANSIENT destination is used when it is None.
+    :param sam_address: (optional) SAM API address
+    :param loop: (optional) Event loop instance
+    :return: An instance of i2plib.Destination
+    """
     if not session_name:
         session_name = i2plib.sam.generate_session_id()
         READY = asyncio.Event(loop=loop)
@@ -53,7 +72,24 @@ async def client_tunnel(local_address, remote_destination, loop=None,
 
 async def server_tunnel(local_address, loop=None, private_key=None, 
                     session_name=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
-    """Add server tunnel to event loop"""
+    """Run a server tunnel in the event loop.
+
+    If you want to expose a local service 127.0.0.1:80 to the I2P network, run
+    a server tunnel with a local address ("127.0.0.1", 80). If you don't 
+    provide a private key or a session name, it will use a TRANSIENT 
+    destination.
+
+    :param local_address: A local address to bind a remote destination to. E.g.
+                        ("127.0.0.1", 6668)
+    :param session_name: (optional) Session nick name. A new session is created
+                        if not specified.
+    :param private_key: (optional) Private key to use in this session. Can be 
+                        a base64 encoded string, i2plib.sam.PrivateKey instance
+                        or None. TRANSIENT destination is used when it is None.
+    :param sam_address: (optional) SAM API address
+    :param loop: (optional) Event loop instance
+    :return: An instance of i2plib.Destination
+    """
     if not session_name:
         session_name = i2plib.sam.generate_session_id()
         READY = asyncio.Event(loop=loop)

@@ -2,7 +2,6 @@ import sys
 from urllib.parse import urlparse
 
 from i2plib.sam import generate_session_id, lookup, get_socket, StreamSession
-import i2plib.utils
 
 def http_get(url, sam_address):
     url = urlparse(url)
@@ -36,6 +35,6 @@ if __name__ == "__main__":
     else:
         url = "http://irkvgdnlc6tidoqomre4qr7q4w4qcjfyvbovatgyolk6d4uvcyha.b32.i2p/uploads/BSD"
 
-    r = http_get(url, i2plib.utils.get_sam_address())
+    r = http_get(url, i2plib.get_sam_address())
 
     print(r)

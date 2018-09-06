@@ -17,7 +17,8 @@ def address_from_string(address_string):
     return (address[0], int(address[1]))
 
 def get_sam_address():
-    """Get SAM address from environment, or use default value"""
+    """Get SAM address from environment variable SAM_ADDRESS, or use a default 
+       value"""
     if os.getenv("SAM_ADDRESS"):
         return address_from_string(os.getenv("SAM_ADDRESS"))
     else:

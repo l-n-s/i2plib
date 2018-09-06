@@ -2,8 +2,6 @@ import sys
 import asyncio
 
 import i2plib
-import i2plib.exceptions
-import i2plib.utils
 
 async def resolve(sam_address, loop, domain):
     try:
@@ -11,11 +9,11 @@ async def resolve(sam_address, loop, domain):
         print("Domain: \n{}\n".format(domain))
         print("Full destination: \n{}\n".format(dest.base64))
         print("B32 address: \n{}.b32.i2p\n".format(dest.base32))
-    except i2plib.exceptions.InvalidKey:
+    except i2plib.InvalidKey:
         print("Not found")
 
 if __name__ == "__main__":
-    sam_address = i2plib.utils.get_sam_address()
+    sam_address = i2plib.get_sam_address()
 
     if len(sys.argv) == 2:
         domain = sys.argv[1] 

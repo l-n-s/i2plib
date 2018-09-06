@@ -1,34 +1,34 @@
 # SAM exceptions
 
-class SAMException(Exception):
-    pass
+class SAMException(IOError):
+    """Base class for SAM exceptions"""
 
 class CantReachPeer(SAMException):
-    pass
+    """The peer exists, but cannot be reached"""
 
 class DuplicatedDest(SAMException):
-    pass
+    """The specified Destination is already in use"""
 
 class DuplicatedId(SAMException):
-    pass
+    """The nickname is already associated with a session"""
 
 class I2PError(SAMException):
-    pass
+    """A generic I2P error"""
 
 class InvalidId(SAMException):
-    pass
+    """STREAM SESSION ID doesn't exist"""
 
 class InvalidKey(SAMException):
-    pass
+    """The specified key is not valid (bad format, etc.)"""
 
 class KeyNotFound(SAMException):
-    pass
+    """The naming system can't resolve the given name"""
 
 class PeerNotFound(SAMException):
-    pass
+    """The peer cannot be found on the network"""
 
 class Timeout(SAMException):
-    pass
+    """The peer cannot be found on the network"""
 
 SAM_EXCEPTIONS = {
     "CANT_REACH_PEER": CantReachPeer,

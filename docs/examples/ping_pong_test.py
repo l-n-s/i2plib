@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 import i2plib
-import i2plib.utils
 
 BUFFER_SIZE = 65536
 
@@ -20,11 +19,11 @@ async def ping_pong_client(loop, session_name, reader, writer):
 async def ping_pong_server(loop, session_name, reader, writer):
     CLIENT_READY = asyncio.Event(loop=loop)
     asyncio.ensure_future(i2plib.create_session("ppclient",  
-        sam_address=i2plib.utils.get_sam_address(), loop=loop,
+        sam_address=i2plib.get_sam_address(), loop=loop,
         session_ready=CLIENT_READY), loop=loop)
     asyncio.ensure_future(i2plib.stream_connect("ppclient", DEST_B32, 
-        sam_address=i2plib.utils.get_sam_address(), loop=loop, session_ready=CLIENT_READY, 
-        stream_ready=ping_pong_client), loop=loop)
+        sam_address=i2plib.get_sam_address(), loop=loop, session_ready=CLIENT_READY, 
+        stream_connected=ping_pong_client), loop=loop)
 
 
     incoming = await reader.read(BUFFER_SIZE)
@@ -42,7 +41,7 @@ async def ping_pong_server(loop, session_name, reader, writer):
     writer.close()
 
 if __name__ == "__main__":
-    sam_address = i2plib.utils.get_sam_address()
+    sam_address = i2plib.get_sam_address()
 
     logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
@@ -55,7 +54,7 @@ if __name__ == "__main__":
         session_ready=READY), loop=loop)
     asyncio.ensure_future(i2plib.stream_accept("ppserver", 
                           sam_address=sam_address, loop=loop, 
-                          session_ready=READY, stream_ready=ping_pong_server),
+                          session_ready=READY, stream_connected=ping_pong_server),
                     loop=loop)
 
     try:
