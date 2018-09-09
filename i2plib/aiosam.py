@@ -58,11 +58,8 @@ async def new_private_key(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None,
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.dest_generate(sig_type))
     reply = parse_reply(await reader.read(BUFFER_SIZE))
-    if reply.ok:
-        writer.close()
-        return i2plib.sam.PrivateKey(reply["PRIV"])
-    else:
-        raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
+    writer.close()
+    return i2plib.sam.PrivateKey(reply["PRIV"])
 
 async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS, 
                          loop=None, session_ready=None, style="STREAM",
