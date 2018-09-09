@@ -39,22 +39,20 @@ async def client_tunnel(local_address, remote_destination, loop=None,
     :param remote_destination: Remote I2P destination, can be either .i2p 
                         domain, .b32.i2p address, base64 destination or 
                         i2plib.Destination instance
-    :param session_name: (optional) Session nick name. A new session is created
-                        if not specified.
+    :param session_name: (optional) Session nick name. A new session nickname is
+                        generated if not specified.
     :param private_key: (optional) Private key to use in this session. Can be 
                         a base64 encoded string, i2plib.sam.PrivateKey instance
                         or None. TRANSIENT destination is used when it is None.
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :return: An instance of i2plib.Destination
+    :return: A tuple of (session_name, writer), where writer is a SAM session
+                        socket StreamWriter transport.
     """
-    if not session_name:
-        session_name = i2plib.sam.generate_session_id()
-        READY = asyncio.Event(loop=loop)
-        asyncio.ensure_future(i2plib.aiosam.create_session(session_name,
-                    style="STREAM", sam_address=sam_address, loop=loop,
-                    session_ready=READY, private_key=private_key), loop=loop)
-        await READY.wait()
+    session_name = session_name or i2plib.sam.generate_session_id()
+    reader, writer = await i2plib.aiosam.create_session(session_name,
+                style="STREAM", sam_address=sam_address, loop=loop,
+                private_key=private_key)
 
     async def handle_client(client_reader, client_writer):
         """Handle local client connection"""
@@ -69,6 +67,7 @@ async def client_tunnel(local_address, remote_destination, loop=None,
     asyncio.ensure_future(asyncio.start_server(handle_client, local_address[0], 
                                                local_address[1], loop=loop),
                           loop=loop)
+    return (session_name, writer)
 
 async def server_tunnel(local_address, loop=None, private_key=None, 
                     session_name=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
@@ -81,22 +80,20 @@ async def server_tunnel(local_address, loop=None, private_key=None,
 
     :param local_address: A local address to bind a remote destination to. E.g.
                         ("127.0.0.1", 6668)
-    :param session_name: (optional) Session nick name. A new session is created
-                        if not specified.
+    :param session_name: (optional) Session nick name. A new session nickname is
+                        generated if not specified.
     :param private_key: (optional) Private key to use in this session. Can be 
                         a base64 encoded string, i2plib.sam.PrivateKey instance
                         or None. TRANSIENT destination is used when it is None.
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :return: An instance of i2plib.Destination
+    :return: A tuple of (session_name, writer), where writer is a SAM session
+                        socket StreamWriter transport.
     """
-    if not session_name:
-        session_name = i2plib.sam.generate_session_id()
-        READY = asyncio.Event(loop=loop)
-        asyncio.ensure_future(i2plib.aiosam.create_session(session_name,
-                    style="STREAM", sam_address=sam_address, loop=loop,
-                    session_ready=READY, private_key=private_key), loop=loop)
-        await READY.wait()
+    session_name = session_name or i2plib.sam.generate_session_id()
+    reader, writer = await i2plib.aiosam.create_session(session_name,
+                style="STREAM", sam_address=sam_address, loop=loop,
+                private_key=private_key)
 
     async def handle_client(incoming, client_reader, client_writer):
         # data and dest may come in one chunk
@@ -127,6 +124,7 @@ async def server_tunnel(local_address, loop=None, private_key=None,
                 incoming, client_reader, client_writer), loop=loop)
 
     asyncio.ensure_future(server_loop(), loop=loop)
+    return (session_name, writer)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

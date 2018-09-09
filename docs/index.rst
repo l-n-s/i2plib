@@ -8,14 +8,11 @@ Welcome to i2plib's documentation!
 
 i2plib is a modern asynchronous library for building I2P applications. 
 
-Requirements:
-
-- Python version >= 3.5
-- I2P router with SAM API enabled
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    quickstart
    api

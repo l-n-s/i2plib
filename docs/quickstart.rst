@@ -1,6 +1,18 @@
 Quick start
 ===========
 
+Installing
+----------
+
+::
+
+    pip install i2plib
+
+Requirements:
+
+- Python version >= 3.5
+- I2P router with SAM API enabled
+
 Connecting to a remote I2P destination
 --------------------------------------
 

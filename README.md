@@ -3,6 +3,11 @@ i2plib
 
 A modern asynchronous library for building I2P applications. 
 
+Installing
+----------
+
+    pip install i2plib
+
 Requirements:
 
 - Python version >= 3.5
