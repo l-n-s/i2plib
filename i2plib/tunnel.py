@@ -8,6 +8,26 @@ import i2plib.utils
 
 BUFFER_SIZE = 65536
 
+class I2PTunnel(object):
+    """I2P Tunnel object
+
+    This object is returned by tunnel creation coroutines
+
+    :param name: Tunnel session name
+    :param session_writer: Session socket writer instance
+    :param future: Tunnel future
+    """
+
+    def __init__(self, name, session_writer, future):
+        self.name = name
+        self.session_writer = session_writer
+        self.future = future
+
+    def stop(self):
+        """Stop the tunnel"""
+        self.session_writer.close()
+        self.future.cancel()
+
 async def proxy_data(reader, writer):
     """Proxy data from reader to writer"""
     try:
@@ -46,8 +66,7 @@ async def client_tunnel(local_address, remote_destination, loop=None,
                         or None. TRANSIENT destination is used when it is None.
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :return: A tuple of (session_name, writer), where writer is a SAM session
-                        socket StreamWriter transport.
+    :return: an instance of i2plib.tunnel.I2PTunnel
     """
     session_name = session_name or i2plib.sam.generate_session_id()
     reader, writer = await i2plib.aiosam.create_session(session_name,
@@ -64,10 +83,10 @@ async def client_tunnel(local_address, remote_destination, loop=None,
         asyncio.ensure_future(proxy_data(client_reader, remote_writer),
                               loop=loop)
 
-    asyncio.ensure_future(asyncio.start_server(handle_client, local_address[0], 
-                                               local_address[1], loop=loop),
-                          loop=loop)
-    return (session_name, writer)
+    tunnel_future = asyncio.ensure_future(
+                asyncio.start_server(handle_client, *local_address, loop=loop),
+                                          loop=loop)
+    return I2PTunnel(session_name, writer, tunnel_future)
 
 async def server_tunnel(local_address, loop=None, private_key=None, 
                     session_name=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
@@ -87,8 +106,7 @@ async def server_tunnel(local_address, loop=None, private_key=None,
                         or None. TRANSIENT destination is used when it is None.
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :return: A tuple of (session_name, writer), where writer is a SAM session
-                        socket StreamWriter transport.
+    :return: an instance of i2plib.tunnel.I2PTunnel
     """
     session_name = session_name or i2plib.sam.generate_session_id()
     reader, writer = await i2plib.aiosam.create_session(session_name,
@@ -123,8 +141,8 @@ async def server_tunnel(local_address, loop=None, private_key=None,
             asyncio.ensure_future(handle_client(
                 incoming, client_reader, client_writer), loop=loop)
 
-    asyncio.ensure_future(server_loop(), loop=loop)
-    return (session_name, writer)
+    tunnel_future = asyncio.ensure_future(server_loop(), loop=loop)
+    return I2PTunnel(session_name, writer, tunnel_future)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

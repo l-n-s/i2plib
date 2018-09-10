@@ -39,6 +39,8 @@ Server tunnel exposes a port on your local machine to the I2P network.
 
 .. autofunction:: client_tunnel
 .. autofunction:: server_tunnel
+.. autoclass:: i2plib.tunnel.I2PTunnel
+   :members:
 
 Data structures
 ---------------
