@@ -39,8 +39,10 @@ def main(args):
     http_server_thread.start()
 
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(i2plib.server_tunnel(server_address, 
-        loop=loop, private_key=priv.base64, sam_address=sam_address), loop=loop)
+
+    tunnel = i2plib.ServerTunnel(server_address, 
+        loop=loop, private_key=priv, sam_address=sam_address)
+    asyncio.ensure_future(tunnel.run(), loop=loop)
 
     try:
         loop.run_forever()

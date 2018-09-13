@@ -8,26 +8,6 @@ import i2plib.utils
 
 BUFFER_SIZE = 65536
 
-class I2PTunnel(object):
-    """I2P Tunnel object
-
-    This object is returned by tunnel creation coroutines
-
-    :param name: Tunnel session name
-    :param session_writer: Session socket writer instance
-    :param future: Tunnel future
-    """
-
-    def __init__(self, name, session_writer, future):
-        self.name = name
-        self.session_writer = session_writer
-        self.future = future
-
-    def stop(self):
-        """Stop the tunnel"""
-        self.session_writer.close()
-        self.future.cancel()
-
 async def proxy_data(reader, writer):
     """Proxy data from reader to writer"""
     try:
@@ -45,104 +25,128 @@ async def proxy_data(reader, writer):
             pass
         logging.debug('close connection')
 
-async def client_tunnel(local_address, remote_destination, loop=None, 
-                            private_key=None, session_name=None,
-                            sam_address=i2plib.sam.DEFAULT_ADDRESS):
-    """Run a client tunnel in the event loop.
+class I2PTunnel(object):
+    """Base I2P Tunnel object, not to be used directly
+
+    :param local_address: A local address to use for a tunnel. 
+                          E.g. ("127.0.0.1", 6668)
+    :param private_key: (optional) Private key to use in this session. Can be 
+                        a base64 encoded string, i2plib.sam.PrivateKey instance
+                        or None. A new key is created when it is None.
+    :param session_name: (optional) Session nick name. A new session nickname is
+                        generated if not specified.
+    :param options: (optional) A dict object with i2cp options
+    :param loop: (optional) Event loop instance
+    :param sam_address: (optional) SAM API address
+    """
+
+    def __init__(self, local_address, private_key=None, session_name=None, 
+                 options={}, loop=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
+        self.local_address = local_address
+        self.private_key = private_key
+        self.session_name = session_name or i2plib.sam.generate_session_id()
+        self.options = options
+        self.loop = loop
+        self.sam_address = sam_address
+
+    async def _pre_run(self):
+        if not self.private_key:
+            self.private_key = await i2plib.new_private_key(
+                sam_address=self.sam_address, loop=self.loop)
+        _, self.session_writer = await i2plib.aiosam.create_session(
+                self.session_name, style=self.style, options=self.options,
+                sam_address=self.sam_address, 
+                loop=self.loop, private_key=self.private_key)
+
+    def stop(self):
+        """Stop the tunnel"""
+        self.session_writer.close()
+        self.future.cancel()
+
+class ClientTunnel(I2PTunnel):
+    """Client tunnel, a subclass of i2plib.tunnel.I2PTunnel
 
     If you run a client tunnel with a local address ("127.0.0.1", 6668) and
     a remote destination "irc.echelon.i2p", all connections to 127.0.0.1:6668 
     will be proxied to irc.echelon.i2p.
 
-    :param local_address: A local address to bind a remote destination to. E.g.
-                        ("127.0.0.1", 6668)
     :param remote_destination: Remote I2P destination, can be either .i2p 
                         domain, .b32.i2p address, base64 destination or 
                         i2plib.Destination instance
-    :param session_name: (optional) Session nick name. A new session nickname is
-                        generated if not specified.
-    :param private_key: (optional) Private key to use in this session. Can be 
-                        a base64 encoded string, i2plib.sam.PrivateKey instance
-                        or None. TRANSIENT destination is used when it is None.
-    :param sam_address: (optional) SAM API address
-    :param loop: (optional) Event loop instance
-    :return: an instance of i2plib.tunnel.I2PTunnel
     """
-    session_name = session_name or i2plib.sam.generate_session_id()
-    reader, writer = await i2plib.aiosam.create_session(session_name,
-                style="STREAM", sam_address=sam_address, loop=loop,
-                private_key=private_key)
 
-    async def handle_client(client_reader, client_writer):
-        """Handle local client connection"""
-        remote_reader, remote_writer = await i2plib.aiosam.stream_connect(
-                session_name, remote_destination, sam_address=sam_address,
-                loop=loop)
-        asyncio.ensure_future(proxy_data(remote_reader, client_writer), 
-                              loop=loop)
-        asyncio.ensure_future(proxy_data(client_reader, remote_writer),
-                              loop=loop)
+    def __init__(self, remote_destination, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.style = "STREAM"
+        self.remote_destination = remote_destination
 
-    tunnel_future = asyncio.ensure_future(
-                asyncio.start_server(handle_client, *local_address, loop=loop),
-                                          loop=loop)
-    return I2PTunnel(session_name, writer, tunnel_future)
+    async def run(self):
+        """A coroutine used to run the tunnel"""
+        await self._pre_run()
 
-async def server_tunnel(local_address, loop=None, private_key=None, 
-                    session_name=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
-    """Run a server tunnel in the event loop.
+        async def handle_client(client_reader, client_writer):
+            """Handle local client connection"""
+            remote_reader, remote_writer = await i2plib.aiosam.stream_connect(
+                    self.session_name, self.remote_destination, 
+                    sam_address=self.sam_address, loop=self.loop)
+            asyncio.ensure_future(proxy_data(remote_reader, client_writer), 
+                                  loop=self.loop)
+            asyncio.ensure_future(proxy_data(client_reader, remote_writer),
+                                  loop=self.loop)
+
+        self.future = asyncio.ensure_future(
+                    asyncio.start_server(handle_client, *self.local_address, 
+                                         loop=self.loop),
+                    loop=self.loop)
+
+class ServerTunnel(I2PTunnel):
+    """Server tunnel, a subclass of i2plib.tunnel.I2PTunnel
 
     If you want to expose a local service 127.0.0.1:80 to the I2P network, run
     a server tunnel with a local address ("127.0.0.1", 80). If you don't 
     provide a private key or a session name, it will use a TRANSIENT 
     destination.
-
-    :param local_address: A local address to bind a remote destination to. E.g.
-                        ("127.0.0.1", 6668)
-    :param session_name: (optional) Session nick name. A new session nickname is
-                        generated if not specified.
-    :param private_key: (optional) Private key to use in this session. Can be 
-                        a base64 encoded string, i2plib.sam.PrivateKey instance
-                        or None. TRANSIENT destination is used when it is None.
-    :param sam_address: (optional) SAM API address
-    :param loop: (optional) Event loop instance
-    :return: an instance of i2plib.tunnel.I2PTunnel
     """
-    session_name = session_name or i2plib.sam.generate_session_id()
-    reader, writer = await i2plib.aiosam.create_session(session_name,
-                style="STREAM", sam_address=sam_address, loop=loop,
-                private_key=private_key)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.style = "STREAM"
 
-    async def handle_client(incoming, client_reader, client_writer):
-        # data and dest may come in one chunk
-        dest, data = incoming.split(b"\n", 1) 
-        remote_destination = i2plib.sam.Destination(dest.decode())
-        logging.debug("{} client connected: {}.b32.i2p".format(session_name,
-            remote_destination.base32))
+    async def run(self):
+        """A coroutine used to run the tunnel"""
+        await self._pre_run()
 
-        try:
-            remote_reader, remote_writer = await asyncio.wait_for(
-                    asyncio.open_connection(
-                       host=local_address[0], port=local_address[1], loop=loop),
-                    timeout=5, loop=loop)
-            if data: remote_writer.write(data)
-            asyncio.ensure_future(proxy_data(remote_reader, client_writer),
-                                  loop=loop)
-            asyncio.ensure_future(proxy_data(client_reader, remote_writer),
-                                  loop=loop)
-        except ConnectionRefusedError:
-            client_writer.close()
+        async def handle_client(incoming, client_reader, client_writer):
+            # data and dest may come in one chunk
+            dest, data = incoming.split(b"\n", 1) 
+            remote_destination = i2plib.sam.Destination(dest.decode())
+            logging.debug("{} client connected: {}.b32.i2p".format(
+                self.session_name, remote_destination.base32))
 
-    async def server_loop():
-        while True:
-            client_reader, client_writer = await i2plib.aiosam.stream_accept(
-                    session_name, sam_address=sam_address, loop=loop)
-            incoming = await client_reader.read(BUFFER_SIZE)
-            asyncio.ensure_future(handle_client(
-                incoming, client_reader, client_writer), loop=loop)
+            try:
+                remote_reader, remote_writer = await asyncio.wait_for(
+                        asyncio.open_connection(
+                           host=self.local_address[0], 
+                           port=self.local_address[1], loop=self.loop),
+                        timeout=5, loop=self.loop)
+                if data: remote_writer.write(data)
+                asyncio.ensure_future(proxy_data(remote_reader, client_writer),
+                                      loop=self.loop)
+                asyncio.ensure_future(proxy_data(client_reader, remote_writer),
+                                      loop=self.loop)
+            except ConnectionRefusedError:
+                client_writer.close()
 
-    tunnel_future = asyncio.ensure_future(server_loop(), loop=loop)
-    return I2PTunnel(session_name, writer, tunnel_future)
+        async def server_loop():
+            while True:
+                client_reader, client_writer = await i2plib.aiosam.stream_accept(
+                        self.session_name, sam_address=self.sam_address, 
+                        loop=self.loop)
+                incoming = await client_reader.read(BUFFER_SIZE)
+                asyncio.ensure_future(handle_client(
+                    incoming, client_reader, client_writer), loop=self.loop)
+
+        self.future = asyncio.ensure_future(server_loop(), loop=self.loop)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -171,18 +175,19 @@ if __name__ == '__main__':
 
     local_address = i2plib.utils.address_from_string(args.address)
 
-    if args.type == 'client':
-        asyncio.ensure_future(client_tunnel(local_address, 
-            args.destination, loop=loop, private_key=private_key, 
-            sam_address=SAM_ADDRESS), loop=loop)
-    elif args.type == 'server':
-        asyncio.ensure_future(server_tunnel(local_address, loop=loop,
-            private_key=private_key, sam_address=SAM_ADDRESS), loop=loop)
+    if args.type == "client":
+        tunnel = ClientTunnel(args.destination, local_address, loop=loop, 
+                private_key=private_key, sam_address=SAM_ADDRESS)
+    elif args.type == "server":
+        tunnel = ServerTunnel(local_address, loop=loop, private_key=private_key, 
+                sam_address=SAM_ADDRESS)
+
+    asyncio.ensure_future(tunnel.run(), loop=loop)
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        pass
+        tunnel.stop()
     finally:
         loop.stop()
         loop.close()

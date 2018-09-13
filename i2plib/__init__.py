@@ -14,7 +14,7 @@ from .aiosam import (
     create_session, stream_connect, stream_accept
 )
 
-from .tunnel import client_tunnel, server_tunnel
+from .tunnel import ClientTunnel, ServerTunnel
 
 from .utils import get_sam_address
 

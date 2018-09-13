@@ -33,14 +33,16 @@ Utilities
 Tunnel API
 ----------
 
-Tunnel API is the quickest way to use regular programms inside I2P.
-Client tunnel binds a remote I2P destination to a port on your local machine.
-Server tunnel exposes a port on your local machine to the I2P network.
+Tunnel API is the quickest way to use regular software inside I2P.
+Client tunnel binds a remote I2P destination to a local address.
+Server tunnel exposes a local address to the I2P network.
 
-.. autofunction:: client_tunnel
-.. autofunction:: server_tunnel
 .. autoclass:: i2plib.tunnel.I2PTunnel
    :members:
+.. autoclass:: i2plib.ClientTunnel
+   :inherited-members:
+.. autoclass:: i2plib.ServerTunnel
+   :inherited-members:
 
 Data structures
 ---------------
