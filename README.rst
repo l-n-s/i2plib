@@ -1,5 +1,7 @@
-Quick start
-===========
+i2plib
+======
+
+i2plib is a modern asynchronous library for building I2P applications. 
 
 Installing
 ----------
@@ -129,3 +131,14 @@ More examples
 
 You can see more demo applications in `docs/examples` directory of the source repository.
 
+
+External links
+--------------
+
+* `Invisible Internet Project`_
+* `SAM API documentation`_
+* `Python asyncio documentation`_
+
+.. _Invisible Internet Project: https://geti2p.net/en/
+.. _SAM API documentation: https://geti2p.net/en/docs/api/samv3
+.. _Python asyncio documentation: https://docs.python.org/3/library/asyncio.html
