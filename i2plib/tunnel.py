@@ -30,9 +30,9 @@ class I2PTunnel(object):
 
     :param local_address: A local address to use for a tunnel. 
                           E.g. ("127.0.0.1", 6668)
-    :param private_key: (optional) Private key to use in this session. Can be 
-                        a base64 encoded string, i2plib.sam.PrivateKey instance
-                        or None. A new key is created when it is None.
+    :param destination: (optional) Destination to use in this session. Can be 
+                        a base64 encoded string, i2plib.sam.Destination instance
+                        or None. A new destination is created when it is None.
     :param session_name: (optional) Session nick name. A new session nickname is
                         generated if not specified.
     :param options: (optional) A dict object with i2cp options
@@ -40,23 +40,23 @@ class I2PTunnel(object):
     :param sam_address: (optional) SAM API address
     """
 
-    def __init__(self, local_address, private_key=None, session_name=None, 
+    def __init__(self, local_address, destination=None, session_name=None, 
                  options={}, loop=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
         self.local_address = local_address
-        self.private_key = private_key
+        self.destination = destination
         self.session_name = session_name or i2plib.sam.generate_session_id()
         self.options = options
         self.loop = loop
         self.sam_address = sam_address
 
     async def _pre_run(self):
-        if not self.private_key:
-            self.private_key = await i2plib.new_private_key(
+        if not self.destination:
+            self.destination = await i2plib.new_destination(
                 sam_address=self.sam_address, loop=self.loop)
         _, self.session_writer = await i2plib.aiosam.create_session(
                 self.session_name, style=self.style, options=self.options,
                 sam_address=self.sam_address, 
-                loop=self.loop, private_key=self.private_key)
+                loop=self.loop, destination=self.destination)
 
     def stop(self):
         """Stop the tunnel"""
@@ -169,17 +169,17 @@ if __name__ == '__main__':
     loop.set_debug(args.debug)
 
     if args.key:
-        private_key = i2plib.sam.PrivateKey(path=args.key)
+        destination = i2plib.sam.Destination(path=args.key, has_private_key=True)
     else:
-        private_key = None
+        destination = None
 
     local_address = i2plib.utils.address_from_string(args.address)
 
     if args.type == "client":
         tunnel = ClientTunnel(args.destination, local_address, loop=loop, 
-                private_key=private_key, sam_address=SAM_ADDRESS)
+                destination=destination, sam_address=SAM_ADDRESS)
     elif args.type == "server":
-        tunnel = ServerTunnel(local_address, loop=loop, private_key=private_key, 
+        tunnel = ServerTunnel(local_address, loop=loop, destination=destination, 
                 sam_address=SAM_ADDRESS)
 
     asyncio.ensure_future(tunnel.run(), loop=loop)

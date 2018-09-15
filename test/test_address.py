@@ -10,9 +10,9 @@ TEST_DEST_B64 = "Q8VZ41jSRFutjRYDbnDioTfMitFMAMINRqrgcwISQ3ObOyzjBX9Kz~OJz7ShyGq
 class TestDestination(unittest.TestCase):
 
     def test_private_key(self):
-        pk = i2plib.sam.PrivateKey(path=TEST_KEY)
-        self.assertEqual(pk.destination.base32, TEST_DEST_B32)
-        self.assertEqual(pk.destination.base64, TEST_DEST_B64)
+        pk = i2plib.sam.Destination(path=TEST_KEY, has_private_key=True)
+        self.assertEqual(pk.base32, TEST_DEST_B32)
+        self.assertEqual(pk.base64, TEST_DEST_B64)
 
     def test_destination(self):
         dest = i2plib.sam.Destination(TEST_DEST_B64)

@@ -10,6 +10,14 @@ from .exceptions import SAM_EXCEPTIONS
 
 I2P_B64_CHARS = "-~"
 
+def i2p_b64encode(x):
+    """Encode I2P destination"""
+    return b64encode(x, altchars=I2P_B64_CHARS.encode()).decode() 
+
+def i2p_b64decode(x):
+    """Decode I2P destination"""
+    return b64decode(x, altchars=I2P_B64_CHARS, validate=True)
+
 SAM_BUFSIZE = 4096
 DEFAULT_ADDRESS = ("127.0.0.1", 7656)
 DEFAULT_MIN_VER = "3.1"
@@ -111,6 +119,8 @@ class Destination(object):
     https://geti2p.net/spec/common-structures#destination
 
     :param data: (optional) Base64 encoded data or binary data 
+    :param path: (optional) A path to a file with binary data 
+    :param has_private_key: (optional) Does data have a private key? 
     """
 
     ECDSA_SHA256_P256 = 1
@@ -120,20 +130,32 @@ class Destination(object):
 
     default_sig_type = EdDSA_SHA512_Ed25519
 
-    def __init__(self, data=None):
-        #: Binary private key data
+    _pubkey_size = 256
+    _signkey_size = 128
+    _min_cert_size = 3
+
+    def __init__(self, data=None, path=None, has_private_key=False):
+        #: Binary destination
         self.data = bytes() 
-        #: Base64 encoded private key data
+        #: Base64 encoded destination
         self.base64 = ""    
+        #: i2plib.PrivateKey instance or None
+        self.private_key = None    
         
-        if data:
-            if type(data) == bytes:
-                self.data = data
-                self.base64 = b64encode(self.data, 
-                        altchars=I2P_B64_CHARS.encode()).decode()
-            elif type(data) == str:
-                self.data = b64decode(data, altchars=I2P_B64_CHARS, validate=True)
-                self.base64 = data
+        if path:
+            with open(path, "rb") as f: data = f.read()
+
+        if data and has_private_key:
+            self.private_key = PrivateKey(data)
+
+            cert_len = struct.unpack("!H", self.private_key.data[385:387])[0]
+            data = self.private_key.data[:387+cert_len]
+
+        if not data:
+            raise Exception("Can't create a destination with no data")
+
+        self.data = data if type(data) == bytes else i2p_b64decode(data)
+        self.base64 = data if type(data) == str else i2p_b64encode(data)
 
     def __repr__(self):
         return "<Destination: {}>".format(self.base32)
@@ -149,39 +171,14 @@ class PrivateKey(object):
 
     https://geti2p.net/spec/common-structures#keysandcert
 
-    :param data: (optional) Base64 encoded data or binary data 
-    :param path: (optional) Path to a file with binary private key data
+    :param data: Base64 encoded data or binary data 
     """
-    _pubkey_size = 256
-    _signkey_size = 128
-    _min_cert_size = 3
 
-    def __init__(self, data=None, path=None):
-        #: Binary private key data
-        self.data = bytes() 
-        #: Base64 encoded private key data
-        self.base64 = ""    
-        #: i2plib.Destination object of the private key
-        self.destination = None    
-
-        if path:
-            with open(path, "rb") as f: data = f.read()
-        if data:
-            if type(data) == bytes:
-                self.data = data
-                self.base64 = b64encode(self.data, 
-                        altchars=I2P_B64_CHARS.encode()).decode()
-            elif type(data) == str:
-                self.data = b64decode(data, altchars=I2P_B64_CHARS, validate=True)
-                self.base64 = data
-
-            cert_len = struct.unpack("!H", self.data[385:387])[0]
-            self.destination = Destination(data=self.data[:387+cert_len])
-
-    def __repr__(self):
-        return "<PrivateKey: {}>".format(self.destination.base32)
-
-
+    def __init__(self, data):
+        #: Binary private key
+        self.data = data if type(data) == bytes else i2p_b64decode(data)
+        #: Base64 encoded private key
+        self.base64 = data if type(data) == str else i2p_b64encode(data)
 
 class StreamSession(object):
 

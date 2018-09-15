@@ -25,11 +25,11 @@ def main(args):
         raise OSError("No such directory {}".format(args.web_directory))
 
     if args.key:
-        priv = i2plib.PrivateKey(path=args.key)
+        dest = i2plib.Destination(path=args.key, has_private_key=True)
     else:
-        priv = i2plib.utils.get_new_private_key(sam_address=sam_address)
+        dest = i2plib.utils.get_new_destination(sam_address=sam_address)
 
-    logging.info("Listening: {}.b32.i2p".format(priv.destination.base32))
+    logging.info("Listening: {}.b32.i2p".format(dest.base32))
     logging.info("Server: {}:{}".format(server_address[0], server_address[1]))
 
     # run HTTP server
@@ -41,7 +41,7 @@ def main(args):
     loop = asyncio.get_event_loop()
 
     tunnel = i2plib.ServerTunnel(server_address, 
-        loop=loop, private_key=priv, sam_address=sam_address)
+        loop=loop, destination=dest, sam_address=sam_address)
     asyncio.ensure_future(tunnel.run(), loop=loop)
 
     try:

@@ -45,26 +45,26 @@ async def dest_lookup(domain, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     else:
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
 
-async def new_private_key(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None,
+async def new_destination(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None,
                       sig_type=i2plib.sam.Destination.default_sig_type):
-    """A coroutine used to generate a new private key of a chosen signature
-    type.
+    """A coroutine used to generate a new destination with a private key of a 
+    chosen signature type.
 
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
     :param sig_type: (optional) Signature type
-    :return: An instance of i2plib.PrivateKey
+    :return: An instance of i2plib.Destination
     """
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.dest_generate(sig_type))
     reply = parse_reply(await reader.read(BUFFER_SIZE))
     writer.close()
-    return i2plib.sam.PrivateKey(reply["PRIV"])
+    return i2plib.sam.Destination(reply["PRIV"], has_private_key=True)
 
 async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS, 
                          loop=None, session_ready=None, style="STREAM",
                          signature_type=i2plib.sam.Destination.default_sig_type,
-                         private_key=None, options={}, session_created=None,
+                         destination=None, options={}, session_created=None,
                          args=()):
     """A coroutine used to create a new SAM session.
 
@@ -76,44 +76,46 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     :param style: (optional) Session style, can be STREAM, DATAGRAM, RAW
     :param signature_type: (optional) If the destination is TRANSIENT, this 
                         signature type is used
-    :param private_key: (optional) Private key to use in this session. Can be 
-                        a base64 encoded string, i2plib.sam.PrivateKey instance
+    :param destination: (optional) Destination to use in this session. Can be 
+                        a base64 encoded string, i2plib.sam.Destination instance
                         or None. TRANSIENT destination is used when it is None.
     :param options: (optional) A dict object with i2cp options
     :param session_created: (optional) A coroutine to be executed after the 
                         session is created. Executed with arguments
-                        (loop, reader, writer, private_key, \*args)
+                        (loop, reader, writer, destination, \*args)
     :param args: (optional) Arguments for a session_created coroutine
     :return: A (reader, writer) pair
     """
     logging.debug("Creating session {}".format(session_name))
-    if private_key:
-        if type(private_key) == i2plib.sam.PrivateKey:
-            private_key = private_key
+    if destination:
+        if type(destination) == i2plib.sam.Destination:
+            destination = destination
         else:
-            private_key = i2plib.sam.PrivateKey(private_key)
-        destination = private_key.base64
+            destination = i2plib.sam.Destination(
+                    destination, has_private_key=True)
+
+        dest_string = destination.private_key.base64
     else:
-        private_key = None
-        destination = i2plib.sam.TRANSIENT_DESTINATION
+        dest_string = i2plib.sam.TRANSIENT_DESTINATION
 
     options = " ".join(["{}={}".format(k, v) for k, v in options.items()])
 
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.session_create(
-            style, session_name, destination, options))
+            style, session_name, dest_string, options))
 
     reply = parse_reply(await reader.read(BUFFER_SIZE))
     if reply.ok:
-        if not private_key:
-            private_key = i2plib.sam.PrivateKey(reply["DESTINATION"]) 
-        logging.debug(private_key.destination.base32)
+        if not destination:
+            destination = i2plib.sam.Destination(
+                    reply["DESTINATION"], has_private_key=True) 
+        logging.debug(destination.base32)
         if session_ready:
             session_ready.set()
         logging.debug("Session created {}".format(session_name))
         if session_created:
             asyncio.ensure_future(session_created(loop, reader, writer, 
-                private_key, *args), loop=loop)
+                destination, *args), loop=loop)
         return (reader, writer)
     else:
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()

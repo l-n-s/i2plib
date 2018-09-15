@@ -10,7 +10,7 @@ DEST_B32 = "bxwnysaa2nwykldz4ekz6u243x5ctqlcot5acmzj2huylvwr7eyq.b32.i2p"
 
 async def ping_pong(sam_address, loop):
     _, server_session_writer = await i2plib.create_session("ppserver",
-        sam_address=sam_address, loop=loop, private_key=PK_B64)
+        sam_address=sam_address, loop=loop, destination=PK_B64)
     server_reader, server_writer = await i2plib.stream_accept("ppserver", 
         sam_address=sam_address, loop=loop)
 

@@ -27,7 +27,7 @@ Utilities
 ---------
 
 .. autofunction:: dest_lookup
-.. autofunction:: new_private_key
+.. autofunction:: new_destination
 .. autofunction:: get_sam_address
 
 Tunnel API
@@ -52,13 +52,13 @@ Data structures
 
 .. autoattribute:: i2plib.sam.Destination.data
 .. autoattribute:: i2plib.sam.Destination.base64
+.. autoattribute:: i2plib.sam.Destination.private_key
 
 .. autoclass:: i2plib.PrivateKey
    :members:
 
 .. autoattribute:: i2plib.sam.PrivateKey.data
 .. autoattribute:: i2plib.sam.PrivateKey.base64
-.. autoattribute:: i2plib.sam.PrivateKey.destination
 
 Exceptions
 ---------------

@@ -1,6 +1,7 @@
 import sys
 from urllib.parse import urlparse
 
+import i2plib
 from i2plib.sam import generate_session_id, lookup, get_socket, StreamSession
 
 def http_get(url, sam_address):
