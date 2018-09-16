@@ -17,6 +17,8 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('.'))
 
+import i2plib
+
 
 # -- Project information -----------------------------------------------------
 
@@ -25,9 +27,9 @@ copyright = '2018, Viktor Villainov'
 author = 'Viktor Villainov'
 
 # The short X.Y version
-version = ''
+version = i2plib.__version__
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = i2plib.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,6 +43,8 @@ release = '0.0.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -158,3 +162,6 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+}

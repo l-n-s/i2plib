@@ -14,8 +14,8 @@ These 4 *coroutines* provide everything you need for making connections inside
 I2P network. All of them return a tuple of transports *(reader, writer)* to 
 deal with.
 
-The *reader* returned is an asyncio.StreamReader instance; the *writer* is 
-an asyncio.StreamWriter instance.
+The *reader* returned is an :class:`asyncio.StreamReader` instance; the *writer* is 
+an :class:`asyncio.StreamWriter` instance.
 
 
 .. autofunction:: create_session
@@ -40,8 +40,10 @@ Server tunnel exposes a local address to the I2P network.
 .. autoclass:: i2plib.tunnel.I2PTunnel
    :members:
 .. autoclass:: i2plib.ClientTunnel
+   :members:
    :inherited-members:
 .. autoclass:: i2plib.ServerTunnel
+   :members:
    :inherited-members:
 
 Data structures

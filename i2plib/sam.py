@@ -139,7 +139,7 @@ class Destination(object):
         self.data = bytes() 
         #: Base64 encoded destination
         self.base64 = ""    
-        #: i2plib.PrivateKey instance or None
+        #: :class:`i2plib.PrivateKey` instance or None
         self.private_key = None    
         
         if path:

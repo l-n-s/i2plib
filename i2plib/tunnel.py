@@ -30,9 +30,10 @@ class I2PTunnel(object):
 
     :param local_address: A local address to use for a tunnel. 
                           E.g. ("127.0.0.1", 6668)
-    :param destination: (optional) Destination to use in this session. Can be 
-                        a base64 encoded string, i2plib.sam.Destination instance
-                        or None. A new destination is created when it is None.
+    :param destination: (optional) Destination to use for this tunnel. Can be 
+                        a base64 encoded string, :class:`i2plib.Destination`
+                        instance or None. A new destination is created when it
+                        is None.
     :param session_name: (optional) Session nick name. A new session nickname is
                         generated if not specified.
     :param options: (optional) A dict object with i2cp options
@@ -72,7 +73,7 @@ class ClientTunnel(I2PTunnel):
 
     :param remote_destination: Remote I2P destination, can be either .i2p 
                         domain, .b32.i2p address, base64 destination or 
-                        i2plib.Destination instance
+                        :class:`i2plib.Destination` instance
     """
 
     def __init__(self, remote_destination, *args, **kwargs):

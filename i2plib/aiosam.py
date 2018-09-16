@@ -34,7 +34,7 @@ async def dest_lookup(domain, sam_address=i2plib.sam.DEFAULT_ADDRESS,
                    address.
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :return: An instance of i2plib.Destination
+    :return: An instance of :class:`i2plib.Destination`
     """
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.naming_lookup(domain))
@@ -53,7 +53,7 @@ async def new_destination(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None,
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
     :param sig_type: (optional) Signature type
-    :return: An instance of i2plib.Destination
+    :return: An instance of :class:`i2plib.Destination`
     """
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.dest_generate(sig_type))
@@ -77,8 +77,9 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     :param signature_type: (optional) If the destination is TRANSIENT, this 
                         signature type is used
     :param destination: (optional) Destination to use in this session. Can be 
-                        a base64 encoded string, i2plib.sam.Destination instance
-                        or None. TRANSIENT destination is used when it is None.
+                        a base64 encoded string, :class:`i2plib.Destination` 
+                        instance or None. TRANSIENT destination is used when it
+                        is None.
     :param options: (optional) A dict object with i2cp options
     :param session_created: (optional) A coroutine to be executed after the 
                         session is created. Executed with arguments

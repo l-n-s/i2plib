@@ -18,13 +18,15 @@ Contents
    api
 
 
-External links
---------------
+Resources
+---------
 
+* `i2plib online documentation`_
 * `Invisible Internet Project`_
 * `SAM API documentation`_
 * `Python asyncio documentation`_
 
+.. _i2plib online documentation: https://i2plib.readthedocs.io/en/latest/
 .. _Invisible Internet Project: https://geti2p.net/en/
 .. _SAM API documentation: https://geti2p.net/en/docs/api/samv3
 .. _Python asyncio documentation: https://docs.python.org/3/library/asyncio.html

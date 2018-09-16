@@ -132,13 +132,26 @@ More examples
 You can see more demo applications in `docs/examples` directory of the source repository.
 
 
-External links
---------------
+Resources
+---------
 
+* `i2plib online documentation`_
 * `Invisible Internet Project`_
 * `SAM API documentation`_
 * `Python asyncio documentation`_
 
+.. _i2plib online documentation: https://i2plib.readthedocs.io/en/latest/
 .. _Invisible Internet Project: https://geti2p.net/en/
 .. _SAM API documentation: https://geti2p.net/en/docs/api/samv3
 .. _Python asyncio documentation: https://docs.python.org/3/library/asyncio.html
+
+Aknowledgments
+--------------
+
+* `i2p.socket, drop in python socket module that uses i2p`_
+* `txi2p, I2P bindings for Twisted`_
+* `leaflet, Dead simple I2P SAM library, written in Python 3`_
+
+.. _i2p.socket, drop in python socket module that uses i2p: https://github.com/majestrate/i2p.socket
+.. _txi2p, I2P bindings for Twisted: https://github.com/str4d/txi2p
+.. _leaflet, Dead simple I2P SAM library, written in Python 3: https://github.com/MuxZeroNet/leaflet
