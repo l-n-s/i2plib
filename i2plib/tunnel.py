@@ -151,7 +151,7 @@ class ServerTunnel(I2PTunnel):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('type', metavar="TYPE", 
+    parser.add_argument('type', metavar="TYPE", choices=('server', 'client'),
                         help="Tunnel type (server or client)")
     parser.add_argument('address', metavar="ADDRESS", 
                         help="Local address (e.g. 127.0.0.1:8000)")
