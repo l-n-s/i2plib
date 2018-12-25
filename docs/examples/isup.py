@@ -16,10 +16,7 @@ async def check_peer(sam_address, loop, session_name, domain):
 
 async def isup(sam_address, loop, domains):
     session_name = "checker"
-    READY = asyncio.Event(loop=loop)
-    asyncio.ensure_future(i2plib.create_session(session_name,
-        sam_address=sam_address, loop=loop, session_ready=READY), loop=loop)
-    await READY.wait()
+    await i2plib.create_session(session_name, sam_address=sam_address, loop=loop)
 
     tasks = [check_peer(sam_address, loop, session_name, d) for d in domains]
     result = await asyncio.gather(*tasks, loop=loop)

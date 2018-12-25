@@ -28,10 +28,7 @@ async def http_get(sam_address, loop, session_name, url):
 
 async def wget(sam_address, loop, url):
     session_name = "wget"
-    READY = asyncio.Event(loop=loop)
-    asyncio.ensure_future(i2plib.create_session(session_name, 
-        sam_address=sam_address, loop=loop, session_ready=READY), loop=loop)
-    await READY.wait()
+    await i2plib.create_session(session_name, sam_address=sam_address, loop=loop)
 
     res = await http_get(sam_address, loop, session_name, url)
     print(res)

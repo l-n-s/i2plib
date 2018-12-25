@@ -62,7 +62,7 @@ async def new_destination(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None,
     return i2plib.sam.Destination(reply["PRIV"], has_private_key=True)
 
 async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS, 
-                         loop=None, session_ready=None, style="STREAM",
+                         loop=None, style="STREAM",
                          signature_type=i2plib.sam.Destination.default_sig_type,
                          destination=None, options={}, session_created=None,
                          args=()):
@@ -71,8 +71,6 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     :param session_name: Session nick name
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :param session_ready: (optional) asyncio.Event instance to notify when 
-                        session is ready 
     :param style: (optional) Session style, can be STREAM, DATAGRAM, RAW
     :param signature_type: (optional) If the destination is TRANSIENT, this 
                         signature type is used
@@ -111,8 +109,6 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
             destination = i2plib.sam.Destination(
                     reply["DESTINATION"], has_private_key=True) 
         logging.debug(destination.base32)
-        if session_ready:
-            session_ready.set()
         logging.debug("Session created {}".format(session_name))
         if session_created:
             asyncio.ensure_future(session_created(loop, reader, writer, 
@@ -123,15 +119,13 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
 
 async def stream_connect(session_name, destination, 
                          sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None, 
-                         session_ready=None, stream_connected=None, args=()):
+                         stream_connected=None, args=()):
     """A coroutine used to connect to a remote I2P destination.
 
     :param session_name: Session nick name
     :param destination: I2P destination to connect to
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :param session_ready: (optional) asyncio.Event instance to notify when 
-                        session is ready 
     :param stream_connected: (optional) A coroutine to be executed after the 
                         connection has been established. Executed with arguments
                         (loop, session_name, reader, writer, \*args)
@@ -144,7 +138,6 @@ async def stream_connect(session_name, destination,
     elif isinstance(destination, str):
         destination = await dest_lookup(destination, sam_address, loop)
 
-    if session_ready: await session_ready.wait()
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.stream_connect(session_name, destination.base64,
                                            silent="false"))
@@ -160,22 +153,19 @@ async def stream_connect(session_name, destination,
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
 
 async def stream_accept(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
-                        loop=None, session_ready=None, stream_connected=None, 
+                        loop=None, stream_connected=None, 
                         args=()):
     """A coroutine used to accept a connection from the I2P network.
 
     :param session_name: Session nick name
     :param sam_address: (optional) SAM API address
     :param loop: (optional) Event loop instance
-    :param session_ready: (optional) asyncio.Event instance to notify when 
-                        session is ready 
     :param stream_connected: (optional) A coroutine to be executed after the 
                         connection has been established. Executed with arguments
                         (loop, session_name, reader, writer, \*args)
     :param args: (optional) Arguments for a stream_connected coroutine
     :return: A (reader, writer) pair
     """
-    if session_ready: await session_ready.wait()
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.stream_accept(session_name, silent="false"))
     reply = parse_reply(await reader.read(BUFFER_SIZE))

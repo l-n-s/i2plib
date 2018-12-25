@@ -9,10 +9,7 @@ async def irc_bot():
     irc_server, nickname, channel = "irc.ilita.i2p", "aiobot", "0"
     session_name = "ircbot"
 
-    READY = asyncio.Event()
-    asyncio.ensure_future(
-            i2plib.create_session(session_name, session_ready=READY))
-    await READY.wait()
+    await i2plib.create_session(session_name)
 
     reader, writer = await i2plib.stream_connect(session_name, irc_server)
 
