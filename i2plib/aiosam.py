@@ -151,3 +151,84 @@ async def stream_accept(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
         return (reader, writer)
     else:
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
+
+### Context managers
+
+class Session:
+    """Async SAM session context manager.
+
+    :param session_name: Session nick name
+    :param sam_address: (optional) SAM API address
+    :param loop: (optional) Event loop instance
+    :param style: (optional) Session style, can be STREAM, DATAGRAM, RAW
+    :param signature_type: (optional) If the destination is TRANSIENT, this 
+                        signature type is used
+    :param destination: (optional) Destination to use in this session. Can be 
+                        a base64 encoded string, :class:`i2plib.Destination` 
+                        instance or None. TRANSIENT destination is used when it
+                        is None.
+    :param options: (optional) A dict object with i2cp options
+    :return: :class:`i2plib.Session` object
+    """
+    def __init__(self, session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS, 
+                         loop=None, style="STREAM",
+                         signature_type=i2plib.sam.Destination.default_sig_type,
+                         destination=None, options={}):
+        self.session_name = session_name
+        self.sam_address = sam_address
+        self.loop = loop
+        self.style = style
+        self.signature_type = signature_type
+        self.destination = destination
+        self.options = options
+
+    async def __aenter__(self):
+        self.reader, self.writer = await create_session(self.session_name, 
+                sam_address=self.sam_address, loop=self.loop, style=self.style, 
+                signature_type=self.signature_type, 
+                destination=self.destination, options=self.options)
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        ### TODO handle exceptions
+        self.writer.close()
+
+class StreamConnection:
+    """Async stream connection context manager.
+
+    :param session_name: Session nick name
+    :param destination: I2P destination to connect to
+    :param sam_address: (optional) SAM API address
+    :param loop: (optional) Event loop instance
+    :return: :class:`i2plib.StreamConnection` object
+    """
+    def __init__(self, session_name, destination, 
+                 sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None):
+        self.session_name = session_name
+        self.sam_address = sam_address
+        self.loop = loop
+        self.destination = destination
+
+    async def __aenter__(self):
+        self.reader, self.writer = await stream_connect(self.session_name, 
+                self.destination, sam_address=self.sam_address, loop=self.loop)
+        return self
+
+    async def read(self, length):
+        """Read data from socket
+
+        :param length: buffer length
+        :return: data
+        """
+        return await self.reader.read(length)
+
+    def write(self, data):
+        """Write data to socket
+
+        :param data: data
+        """
+        self.writer.write(data)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        ### TODO handle exceptions
+        self.writer.close()
