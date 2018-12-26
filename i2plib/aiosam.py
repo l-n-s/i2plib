@@ -232,3 +232,41 @@ class StreamConnection:
     async def __aexit__(self, exc_type, exc, tb):
         ### TODO handle exceptions
         self.writer.close()
+
+class StreamAcceptor:
+    """Async stream acceptor context manager.
+
+    :param session_name: Session nick name
+    :param sam_address: (optional) SAM API address
+    :param loop: (optional) Event loop instance
+    :return: :class:`i2plib.StreamAcceptor` object
+    """
+    def __init__(self, session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS, 
+                 loop=None):
+        self.session_name = session_name
+        self.sam_address = sam_address
+        self.loop = loop
+
+    async def __aenter__(self):
+        self.reader, self.writer = await stream_accept(self.session_name, 
+                        sam_address=self.sam_address, loop=self.loop)
+        return self
+
+    async def read(self, length):
+        """Read data from socket
+
+        :param length: buffer length
+        :return: data
+        """
+        return await self.reader.read(length)
+
+    def write(self, data):
+        """Write data to socket
+
+        :param data: data
+        """
+        self.writer.write(data)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        ### TODO handle exceptions
+        self.writer.close()

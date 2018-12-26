@@ -12,7 +12,7 @@ from .sam import Destination, PrivateKey
 from .aiosam import (
     get_sam_socket, dest_lookup, new_destination, 
     create_session, stream_connect, stream_accept,
-    Session, StreamConnection
+    Session, StreamConnection, StreamAcceptor
 )
 
 from .tunnel import ClientTunnel, ServerTunnel
