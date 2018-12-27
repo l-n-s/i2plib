@@ -53,6 +53,8 @@ You can use them like that:
    :members:
 .. autoclass:: i2plib.StreamConnection
    :members:
+.. autoclass:: i2plib.StreamAcceptor
+   :members:
 
 Utilities
 ---------
