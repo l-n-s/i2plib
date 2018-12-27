@@ -39,12 +39,7 @@ async def fake_sam_server_handler(reader, writer):
 
     writer.close()
 
-
-async def ping_pong(sam_address, loop):
-    asyncio.ensure_future(asyncio.start_server(
-        fake_sam_server_handler, *sam_address, loop=loop), loop=loop)
-    await asyncio.sleep(0.1)
-
+async def coroutines_test(sam_address, loop):
     _, server_session_writer = await i2plib.create_session("ppserver",
         sam_address=sam_address, loop=loop, destination=PK_B64)
     server_reader, server_writer = await i2plib.stream_accept("ppserver", 
@@ -71,13 +66,49 @@ async def ping_pong(sam_address, loop):
     server_session_writer.close()
     client_session_writer.close()
 
-    await asyncio.sleep(0.0001) # wait until all tasks are completed
+async def context_managers_test(sam_address, loop):
+    async def server(sam_address, loop, ready):
+        async with i2plib.Session("ppserver", sam_address=sam_address, loop=loop, destination=PK_B64):
+            ready.release()
+            async with i2plib.StreamAcceptor("ppserver", sam_address=sam_address, loop=loop) as s:
+                incoming = await s.read(BUFFER_SIZE)
+                dest, request = incoming.split(b"\n", 1)
+                remote_destination = i2plib.Destination(dest.decode())
+                if not request:
+                    request = await s.read(BUFFER_SIZE)
+                assert request == b"PING"
+                s.write(b"PONG")
 
+    ready = asyncio.Lock(loop=loop)
+    await ready.acquire()
+    server_task = asyncio.ensure_future(server(sam_address, loop, ready), loop=loop)
+    await ready.acquire()
+
+    async with i2plib.Session("ppclient", sam_address=sam_address, loop=loop):
+        async with i2plib.StreamConnection("ppclient", DEST_B32, sam_address=sam_address, loop=loop) as c:
+            c.write(b"PING")
+            response = await c.read(BUFFER_SIZE)
+            assert response == b"PONG"
+
+    await server_task
+
+async def main(sam_address, loop):
+    sam_server = await asyncio.start_server(
+        fake_sam_server_handler, *sam_address, loop=loop)
+
+    await coroutines_test(sam_address, loop)
+    await context_managers_test(sam_address, loop)
+
+    sam_server.close()
+    await sam_server.wait_closed()
+
+    for t in asyncio.Task.all_tasks(loop=loop):
+        if t != asyncio.Task.current_task(loop=loop):
+            await t
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
     sam_address = ("127.0.0.1", 19132)
-
-    loop.run_until_complete(ping_pong(sam_address, loop))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(sam_address, loop))
     loop.stop()
     loop.close()
