@@ -1,5 +1,5 @@
+import unittest
 import asyncio
-import logging
 
 import i2plib
 
@@ -39,76 +39,85 @@ async def fake_sam_server_handler(reader, writer):
 
     writer.close()
 
-async def coroutines_test(sam_address, loop):
-    _, server_session_writer = await i2plib.create_session("ppserver",
-        sam_address=sam_address, loop=loop, destination=PK_B64)
-    server_reader, server_writer = await i2plib.stream_accept("ppserver", 
-        sam_address=sam_address, loop=loop)
+class TestFuncPingPong(unittest.TestCase):
 
-    _, client_session_writer = await i2plib.create_session("ppclient", 
-        sam_address=sam_address, loop=loop)
-    client_reader, client_writer = await i2plib.stream_connect("ppclient",
-            DEST_B32, sam_address=sam_address, loop=loop)
+    def setUp(self):
+        self.sam_address = ("127.0.0.1", 19132)
+        self.loop = asyncio.new_event_loop()
 
-    client_writer.write(b"PING")
-    incoming = await server_reader.read(BUFFER_SIZE)
-    dest, request = incoming.split(b"\n", 1)
-    remote_destination = i2plib.Destination(dest.decode())
-    if not request:
-        request = await server_reader.read(BUFFER_SIZE)
-    assert request == b"PING"
-    server_writer.write(b"PONG")
-    response = await client_reader.read(BUFFER_SIZE)
-    assert response == b"PONG"
+    async def runner(self, coro, *args, **kwargs):
+        sam_server = await asyncio.start_server(
+            fake_sam_server_handler, *self.sam_address, loop=self.loop)
 
-    client_writer.close()
-    server_writer.close()
-    server_session_writer.close()
-    client_session_writer.close()
+        await coro(*args, **kwargs)
 
-async def context_managers_test(sam_address, loop):
-    async def server(sam_address, loop, ready):
-        async with i2plib.Session("ppserver", sam_address=sam_address, loop=loop, destination=PK_B64):
-            ready.release()
-            async with i2plib.StreamAcceptor("ppserver", sam_address=sam_address, loop=loop) as s:
-                incoming = await s.read(BUFFER_SIZE)
-                dest, request = incoming.split(b"\n", 1)
-                remote_destination = i2plib.Destination(dest.decode())
-                if not request:
-                    request = await s.read(BUFFER_SIZE)
-                assert request == b"PING"
-                s.write(b"PONG")
+        sam_server.close()
+        await sam_server.wait_closed()
 
-    ready = asyncio.Lock(loop=loop)
-    await ready.acquire()
-    server_task = asyncio.ensure_future(server(sam_address, loop, ready), loop=loop)
-    await ready.acquire()
+        for t in asyncio.Task.all_tasks(loop=self.loop):
+            if t != asyncio.Task.current_task(loop=self.loop):
+                await t
 
-    async with i2plib.Session("ppclient", sam_address=sam_address, loop=loop):
-        async with i2plib.StreamConnection("ppclient", DEST_B32, sam_address=sam_address, loop=loop) as c:
-            c.write(b"PING")
-            response = await c.read(BUFFER_SIZE)
-            assert response == b"PONG"
+    def test_coroutines_ping_pong(self):
+        async def coroutines_test():
+            _, server_session_writer = await i2plib.create_session("ppserver",
+                sam_address=self.sam_address, loop=self.loop, destination=PK_B64)
+            server_reader, server_writer = await i2plib.stream_accept("ppserver", 
+                sam_address=self.sam_address, loop=self.loop)
 
-    await server_task
+            _, client_session_writer = await i2plib.create_session("ppclient", 
+                sam_address=self.sam_address, loop=self.loop)
+            client_reader, client_writer = await i2plib.stream_connect("ppclient",
+                    DEST_B32, sam_address=self.sam_address, loop=self.loop)
 
-async def main(sam_address, loop):
-    sam_server = await asyncio.start_server(
-        fake_sam_server_handler, *sam_address, loop=loop)
+            client_writer.write(b"PING")
+            incoming = await server_reader.read(BUFFER_SIZE)
+            dest, request = incoming.split(b"\n", 1)
+            remote_destination = i2plib.Destination(dest.decode())
+            if not request:
+                request = await server_reader.read(BUFFER_SIZE)
+            self.assertEqual(request, b"PING")
+            server_writer.write(b"PONG")
+            response = await client_reader.read(BUFFER_SIZE)
+            self.assertEqual(response, b"PONG")
 
-    await coroutines_test(sam_address, loop)
-    await context_managers_test(sam_address, loop)
+            client_writer.close()
+            server_writer.close()
+            server_session_writer.close()
+            client_session_writer.close()
 
-    sam_server.close()
-    await sam_server.wait_closed()
+        self.loop.run_until_complete(self.runner(coroutines_test))
 
-    for t in asyncio.Task.all_tasks(loop=loop):
-        if t != asyncio.Task.current_task(loop=loop):
-            await t
+    def test_context_managers_ping_pong(self):
+        async def context_managers_test():
+            async def server(sam_address, loop, ready):
+                async with i2plib.Session("ppserver", sam_address=sam_address, loop=loop, destination=PK_B64):
+                    ready.release()
+                    async with i2plib.StreamAcceptor("ppserver", sam_address=sam_address, loop=loop) as s:
+                        incoming = await s.read(BUFFER_SIZE)
+                        dest, request = incoming.split(b"\n", 1)
+                        remote_destination = i2plib.Destination(dest.decode())
+                        if not request:
+                            request = await s.read(BUFFER_SIZE)
+                        self.assertEqual(request, b"PING")
+                        s.write(b"PONG")
 
-if __name__ == "__main__":
-    sam_address = ("127.0.0.1", 19132)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(sam_address, loop))
-    loop.stop()
-    loop.close()
+            ready = asyncio.Lock(loop=self.loop)
+            await ready.acquire()
+            server_task = asyncio.ensure_future(server(self.sam_address, self.loop, ready), loop=self.loop)
+            await ready.acquire()
+
+            async with i2plib.Session("ppclient", sam_address=self.sam_address, loop=self.loop):
+                async with i2plib.StreamConnection("ppclient", DEST_B32, sam_address=self.sam_address, loop=self.loop) as c:
+                    c.write(b"PING")
+                    response = await c.read(BUFFER_SIZE)
+                    self.assertEqual(response, b"PONG")
+
+            await server_task
+
+        self.loop.run_until_complete(self.runner(context_managers_test))
+
+    def tearDown(self):
+        self.loop.stop()
+        self.loop.close()
+
