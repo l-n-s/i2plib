@@ -1,5 +1,7 @@
 i2plib
 ======
+.. image:: https://travis-ci.com/l-n-s/i2plib.svg?branch=master
+    :target: https://travis-ci.com/l-n-s/i2plib
 
 i2plib is a modern asynchronous library for building I2P applications. 
 
