@@ -2,6 +2,9 @@ i2plib
 ======
 .. image:: https://travis-ci.com/l-n-s/i2plib.svg?branch=master
     :target: https://travis-ci.com/l-n-s/i2plib
+.. image:: https://readthedocs.org/projects/i2plib/badge/?version=latest
+   :target: https://i2plib.readthedocs.io/en/latest/
+   :alt: Latest Read The Docs
 
 i2plib is a modern asynchronous library for building I2P applications. 
 
@@ -20,7 +23,7 @@ Requirements:
 Connecting to a remote I2P destination
 --------------------------------------
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib
@@ -49,7 +52,7 @@ Connecting to a remote I2P destination
 Accept connections in I2P
 -------------------------
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib
@@ -89,7 +92,7 @@ Server tunnel
 
 Expose a local service to I2P like that:
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib
@@ -111,7 +114,7 @@ Client tunnel
 
 Bind a remote I2P destination to a port on your local host:
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib

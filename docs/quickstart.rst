@@ -16,7 +16,7 @@ Requirements:
 Connecting to a remote I2P destination
 --------------------------------------
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib
@@ -45,7 +45,7 @@ Connecting to a remote I2P destination
 Accept connections in I2P
 -------------------------
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib
@@ -85,7 +85,7 @@ Server tunnel
 
 Expose a local service to I2P like that:
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib
@@ -107,7 +107,7 @@ Client tunnel
 
 Bind a remote I2P destination to a port on your local host:
 
-::
+.. code-block:: python
 
     import asyncio
     import i2plib

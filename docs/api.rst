@@ -30,7 +30,7 @@ The following are asynchronous context managers for making I2P connections.
 
 You can use them like that:
 
-::
+.. code-block:: python
     
     import asyncio
     import i2plib
