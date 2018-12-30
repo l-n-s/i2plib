@@ -4,3 +4,4 @@ __pycache__
 Pipfile
 Pipfile.lock
 docs/_build
+.tox
