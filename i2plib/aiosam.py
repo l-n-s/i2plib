@@ -8,7 +8,7 @@ import i2plib.utils
 BUFFER_SIZE = 65536
 
 def parse_reply(data):
-    return i2plib.sam.Answer(data.split(b"\n")[0].decode())
+    return i2plib.sam.Message(data.split(b"\n")[0].decode())
 
 async def get_sam_socket(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None):
     """A couroutine used to create a new SAM socket.

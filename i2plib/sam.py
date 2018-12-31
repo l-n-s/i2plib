@@ -27,8 +27,8 @@ TRANSIENT_DESTINATION = "TRANSIENT"
 VALID_BASE32_ADDRESS = re.compile(r"^([a-zA-Z0-9]{52}).b32.i2p$")
 VALID_BASE64_ADDRESS = re.compile(r"^([a-zA-Z0-9-~=]{516,528})$")
 
-class Answer(object):
-    """Parse answer from SAM bridge to an object"""
+class Message(object):
+    """Parse SAM message to an object"""
     def __init__(self, s):
         self.opts = {}
         if type(s) != str:
@@ -36,8 +36,8 @@ class Answer(object):
         else:
             self._reply_string = s
 
-        self.cmd, opts = self._reply_string.split(" ", 1)
-        for v in opts.split(" ")[1:]:
+        self.cmd, self.action, opts = self._reply_string.split(" ", 2)
+        for v in opts.split(" "):
             data = v.split("=", 1) if "=" in v else (v, True)
             self.opts[data[0]] = data[1]
 
@@ -79,8 +79,8 @@ def generate_session_id(length=6):
     return "i2plib-" + "".join(sid)
 
 def get_response(sam_socket):
-    """Read answer from SAM API"""
-    return Answer(sam_socket.recv(SAM_BUFSIZE))
+    """Read message from SAM API"""
+    return Message(sam_socket.recv(SAM_BUFSIZE))
 
 
 # SAM request messages
