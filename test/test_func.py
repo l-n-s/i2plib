@@ -43,7 +43,9 @@ async def fake_sam_server_handler(reader, writer):
                 elif msg["NAME"] == UNKNOWN_DEST:
                     writer.write("NAMING REPLY RESULT=INVALID_KEY NAME={}\n".format(
                         UNKNOWN_DEST).encode())
-
+            elif msg.cmd == "DEST" and msg.action == "GENERATE":
+                writer.write("DEST REPLY PUB={} PRIV={}\n".format(
+                    CLIENT_DEST.base64, CLIENT_DEST.private_key.base64).encode())
             elif msg.cmd == "SESSION" and msg.action == "CREATE":
                 session = msg["ID"]
                 writer.write("SESSION STATUS RESULT=OK DESTINATION={}\n".format(
@@ -181,6 +183,14 @@ class TestFuncPingPong(unittest.TestCase):
             client_session_writer.close()
 
         self.loop.run_until_complete(self.runner(coro))
+
+    def test_dest_generate(self):
+        async def coro():
+            dest = await i2plib.new_destination(sam_address=self.sam_address, loop=self.loop)
+            self.assertEqual(dest.base32, CLIENT_DEST.base32)
+
+        self.loop.run_until_complete(self.runner(coro))
+
 
 
 
