@@ -1,5 +1,8 @@
 import socket
 import os
+import random
+import string
+
 import i2plib.sam
 
 def get_free_port():
@@ -30,4 +33,10 @@ def get_sam_address():
     """
     value = os.getenv("I2P_SAM_ADDRESS")
     return address_from_string(value) if value else i2plib.sam.DEFAULT_ADDRESS
+
+def generate_session_id(length=6):
+    """Generate random session id"""
+    rand = random.SystemRandom()
+    sid = [rand.choice(string.ascii_letters) for _ in range(length)]
+    return "i2plib-" + "".join(sid)
 

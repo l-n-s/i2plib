@@ -45,7 +45,7 @@ class I2PTunnel(object):
                  options={}, loop=None, sam_address=i2plib.sam.DEFAULT_ADDRESS):
         self.local_address = local_address
         self.destination = destination
-        self.session_name = session_name or i2plib.sam.generate_session_id()
+        self.session_name = session_name or i2plib.utils.generate_session_id()
         self.options = options
         self.loop = loop
         self.sam_address = sam_address

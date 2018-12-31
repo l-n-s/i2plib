@@ -1,8 +1,6 @@
 from base64 import b64decode, b64encode, b32encode
 from hashlib import sha256
 import struct
-import random
-import string
 import re
 
 
@@ -48,13 +46,6 @@ class Message(object):
 
     def __repr__(self):
         return self._reply_string
-
-
-def generate_session_id(length=6):
-    """Generate random session id"""
-    rand = random.SystemRandom()
-    sid = [rand.choice(string.ascii_letters) for _ in range(length)]
-    return "i2plib-" + "".join(sid)
 
 
 # SAM request messages
