@@ -17,3 +17,8 @@ class TestDestination(unittest.TestCase):
     def test_destination(self):
         dest = i2plib.sam.Destination(TEST_DEST_B64)
         self.assertEqual(dest.base32, TEST_DEST_B32)
+        self.assertEqual(str(dest), "<Destination: {}>".format(TEST_DEST_B32))
+
+    def test_empty_destination(self):
+        with self.assertRaises(Exception):
+            dest = i2plib.sam.Destination(b'')

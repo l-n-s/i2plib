@@ -4,8 +4,10 @@ import os
 
 import i2plib
 import i2plib.sam
+import i2plib.utils
 
 BUFFER_SIZE = 65536
+REAL_SAM = os.getenv("REAL_SAM")
 
 SERVER_DEST_B64 = "5pJLIgm7KCqk-d0As66OdeMRj4moqtD97wOluQh5SXWCbeMfp7cr8cgHU~5rrcN6V~QcIJuqjDpYWojBdjYrc7fAA3iwWpN4fzI05yvE48oOOOLqBq7SvkpyzIhjc0hv81XQIu0LWzXXS~-B61wurJhte-LisF571BzefV5xoaRN8y3A0RidaJyuzVufPP4cKY5NeSsmTY36QRl54PG7iWJSXnLROROlg6qsjoeIV9lyNFY6ZsQKTQzEIInCZaARmNfoJP-MAsOMoj-CRDU2MXhYT~DKdI-rWH579A3wuoEjmlHtHyms7xvwUkb6kIx5UJHZmzF2Hyv3xVrpu0HSkZfUIbzz1lAc4IZ-8jnBjt2RIRpYMNnwZW09HjJXQDd7K-QvpxpK-cqNJcmWehGP7OxLt9Jj6h~8aUFHIJtFI77Zmp~YGf7cO9vCZexeLn7iByqDtfhzTP62IPu0~MJafA4efU83A-DXo8PJhOhl7rYRzH7bWRzB1rhBI~w~TsVOBQAEAAcAAL0me7gfS2H-OZ3FAsPtbUFCFpTcvfLAzBmNxxYU5TflB4KcxNe2isp2UjM7YLCuZg6OCaBSEnoag-ABpJPkY0WIjkqbFzOlowH2oVwevFHrZCFwvf1XVXsyWdupACHmmRHFCHKHMKzolO3Cye0RMH0wIEyMRyIszSThft~keXWyuEwBM4Vros-OKrKN-mBrHNbzQzTiGLS0dVMzdPvG6Pq4t1~wCWqAXrO8n7xU-xQECEpl053Ml5AJyUaCoVj3xqCd4nbrH2~kLmvd9r2nnd-Ig19BFHNALadSYbcH9JEdJZPY~7c505W1xhsrM2PcNnE4hm8DF4R~AddaILD7b2d1l~kehRZpUKdCL~THPTM20kTyN2PFqghIA4Ng-tVmXw=="
 SERVER_DEST = i2plib.Destination(SERVER_DEST_B64, has_private_key=True)
@@ -76,27 +78,28 @@ class TestFuncPingPong(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        self.real_sam = os.getenv("REAL_SAM")
-        if not self.real_sam:
-            self.sam_address = ("127.0.0.1", 19132)
+        if REAL_SAM:
+            self.sam_address = i2plib.utils.get_sam_address()
         else:
-            self.sam_address = i2plib.sam.DEFAULT_ADDRESS
+            self.sam_address = ("127.0.0.1", 19132)
 
-    async def runner(self, coro, *args, **kwargs):
-        if not self.real_sam:
-            sam_server = await asyncio.start_server(
-                fake_sam_server_handler, *self.sam_address, loop=self.loop)
+    def runner(self, coro, *args, **kwargs):
+        async def _runner(coro, *args, **kwargs):
+            if not REAL_SAM:
+                sam_server = await asyncio.start_server(
+                    fake_sam_server_handler, *self.sam_address, loop=self.loop)
 
-        await coro(*args, **kwargs)
+            await coro(*args, **kwargs)
 
-        if not self.real_sam:
-            sam_server.close()
-            await sam_server.wait_closed()
+            if not REAL_SAM:
+                sam_server.close()
+                await sam_server.wait_closed()
 
-        for t in asyncio.Task.all_tasks(loop=self.loop):
-            if t != asyncio.Task.current_task(loop=self.loop):
-                await t
+            for t in asyncio.Task.all_tasks(loop=self.loop):
+                if t != asyncio.Task.current_task(loop=self.loop):
+                    await t
 
+        self.loop.run_until_complete(_runner(coro, *args, **kwargs))
 
     def test_coroutines_ping_pong(self):
         async def coroutines_test():
@@ -126,7 +129,7 @@ class TestFuncPingPong(unittest.TestCase):
             server_session_writer.close()
             client_session_writer.close()
 
-        self.loop.run_until_complete(self.runner(coroutines_test))
+        self.runner(coroutines_test)
 
     def test_context_managers_ping_pong(self):
         async def context_managers_test():
@@ -156,7 +159,7 @@ class TestFuncPingPong(unittest.TestCase):
 
             await server_task
 
-        self.loop.run_until_complete(self.runner(context_managers_test))
+        self.runner(context_managers_test)
 
     def test_unknown_dest(self):
         async def coro():
@@ -169,7 +172,7 @@ class TestFuncPingPong(unittest.TestCase):
 
             client_session_writer.close()
 
-        self.loop.run_until_complete(self.runner(coro))
+        self.runner(coro)
 
     def test_offline_dest(self):
         async def coro():
@@ -182,14 +185,15 @@ class TestFuncPingPong(unittest.TestCase):
 
             client_session_writer.close()
 
-        self.loop.run_until_complete(self.runner(coro))
+        self.runner(coro)
 
+    @unittest.skipIf(REAL_SAM, "real SAM returns a real destination")
     def test_dest_generate(self):
         async def coro():
             dest = await i2plib.new_destination(sam_address=self.sam_address, loop=self.loop)
             self.assertEqual(dest.base32, CLIENT_DEST.base32)
 
-        self.loop.run_until_complete(self.runner(coro))
+        self.runner(coro)
 
 
 
