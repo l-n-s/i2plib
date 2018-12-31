@@ -1,5 +1,6 @@
 import unittest
 import asyncio
+import os
 
 import i2plib
 import i2plib.sam
@@ -7,12 +8,20 @@ import i2plib.sam
 BUFFER_SIZE = 65536
 
 SERVER_DEST_B64 = "5pJLIgm7KCqk-d0As66OdeMRj4moqtD97wOluQh5SXWCbeMfp7cr8cgHU~5rrcN6V~QcIJuqjDpYWojBdjYrc7fAA3iwWpN4fzI05yvE48oOOOLqBq7SvkpyzIhjc0hv81XQIu0LWzXXS~-B61wurJhte-LisF571BzefV5xoaRN8y3A0RidaJyuzVufPP4cKY5NeSsmTY36QRl54PG7iWJSXnLROROlg6qsjoeIV9lyNFY6ZsQKTQzEIInCZaARmNfoJP-MAsOMoj-CRDU2MXhYT~DKdI-rWH579A3wuoEjmlHtHyms7xvwUkb6kIx5UJHZmzF2Hyv3xVrpu0HSkZfUIbzz1lAc4IZ-8jnBjt2RIRpYMNnwZW09HjJXQDd7K-QvpxpK-cqNJcmWehGP7OxLt9Jj6h~8aUFHIJtFI77Zmp~YGf7cO9vCZexeLn7iByqDtfhzTP62IPu0~MJafA4efU83A-DXo8PJhOhl7rYRzH7bWRzB1rhBI~w~TsVOBQAEAAcAAL0me7gfS2H-OZ3FAsPtbUFCFpTcvfLAzBmNxxYU5TflB4KcxNe2isp2UjM7YLCuZg6OCaBSEnoag-ABpJPkY0WIjkqbFzOlowH2oVwevFHrZCFwvf1XVXsyWdupACHmmRHFCHKHMKzolO3Cye0RMH0wIEyMRyIszSThft~keXWyuEwBM4Vros-OKrKN-mBrHNbzQzTiGLS0dVMzdPvG6Pq4t1~wCWqAXrO8n7xU-xQECEpl053Ml5AJyUaCoVj3xqCd4nbrH2~kLmvd9r2nnd-Ig19BFHNALadSYbcH9JEdJZPY~7c505W1xhsrM2PcNnE4hm8DF4R~AddaILD7b2d1l~kehRZpUKdCL~THPTM20kTyN2PFqghIA4Ng-tVmXw=="
-CLIENT_DEST_B64 = "Fyax0ON9-Djvy5G7z7ZRyyu7vjK9-dcg4ei94Lnfd1IEI8DqQj3PTytWql-rltRmeMg9pRAm3XqpTNcGR0a26KR3cFNIwRgCKCQ3BOU8bNZQXpaWEpfhoOGKd5Nt9~qI6M3kFcbv8WWVtlPCNEnzjPbXhr0XLuttYFdOPuCDlzxXEHe8NVMTAhXKiuBox7c8zRB~WT6AMJxedf9u3nXLQOYV~ZT-4-xoHcbp1zwbRnvYJ0yjBNprmaac5xo1Zu~k9q93ug3S08FwwjioDswTl9ZyEJkrxTtaUdH~OwCKRVmXhP-HIKMXeBdDRrPFGBKPe-igAyuIdD5zYlgJwxkYsZAvU8XeQRpck7krFhLSgGez8zlpgZi7oUdbYMC6BpqZpDLppWCl9bOz5tX55gd3nbWEYb0DDlVyCAhBkfznUvmOlHmdcAHGS-B7e4WTi0yRb76hRrecHiX2tqDI7UGTAlTIx0TGW3Pa7gMImb5bV5n5TsYw7qBJABgMPSP6MkjtAAAAfn2Z9dSDlwpIVfjzxqhq7lY9So5O0PYFIFYshZhNim7R6nXJbn-QX9DoZ7JGEx9uXndWu6tEApY6q1OGAeXhjEnHagF1o13GpqZ4wgYuOehaq1fmJyFoeYQToHiBsXyo1FE1GeGV8JYJLOWHLKuxay9Nh84yyJ6XJGgylElqnl4WGiwqc0qsAk7l209agFggMCyqCx~nSFMtfGZ2pKp-i7H3HQC9BM0SednWiVsgRPGG20Z-WoQtHTvj5~VUhIbXpa1BGj~sOydi27A3xQPQYtEXhhfWKRGs7pAaobfaUeSnQ12a09LXO8U53eGPioVdSbTMOTqkuWhGEuXebx9DxV3hUdopRSpKSnCT6U9Fc5GpqRKk"
-
 SERVER_DEST = i2plib.Destination(SERVER_DEST_B64, has_private_key=True)
+
+CLIENT_DEST_B64 = "Fyax0ON9-Djvy5G7z7ZRyyu7vjK9-dcg4ei94Lnfd1IEI8DqQj3PTytWql-rltRmeMg9pRAm3XqpTNcGR0a26KR3cFNIwRgCKCQ3BOU8bNZQXpaWEpfhoOGKd5Nt9~qI6M3kFcbv8WWVtlPCNEnzjPbXhr0XLuttYFdOPuCDlzxXEHe8NVMTAhXKiuBox7c8zRB~WT6AMJxedf9u3nXLQOYV~ZT-4-xoHcbp1zwbRnvYJ0yjBNprmaac5xo1Zu~k9q93ug3S08FwwjioDswTl9ZyEJkrxTtaUdH~OwCKRVmXhP-HIKMXeBdDRrPFGBKPe-igAyuIdD5zYlgJwxkYsZAvU8XeQRpck7krFhLSgGez8zlpgZi7oUdbYMC6BpqZpDLppWCl9bOz5tX55gd3nbWEYb0DDlVyCAhBkfznUvmOlHmdcAHGS-B7e4WTi0yRb76hRrecHiX2tqDI7UGTAlTIx0TGW3Pa7gMImb5bV5n5TsYw7qBJABgMPSP6MkjtAAAAfn2Z9dSDlwpIVfjzxqhq7lY9So5O0PYFIFYshZhNim7R6nXJbn-QX9DoZ7JGEx9uXndWu6tEApY6q1OGAeXhjEnHagF1o13GpqZ4wgYuOehaq1fmJyFoeYQToHiBsXyo1FE1GeGV8JYJLOWHLKuxay9Nh84yyJ6XJGgylElqnl4WGiwqc0qsAk7l209agFggMCyqCx~nSFMtfGZ2pKp-i7H3HQC9BM0SednWiVsgRPGG20Z-WoQtHTvj5~VUhIbXpa1BGj~sOydi27A3xQPQYtEXhhfWKRGs7pAaobfaUeSnQ12a09LXO8U53eGPioVdSbTMOTqkuWhGEuXebx9DxV3hUdopRSpKSnCT6U9Fc5GpqRKk"
 CLIENT_DEST = i2plib.Destination(CLIENT_DEST_B64, has_private_key=True)
 
-SESSION_DEST_MAP = {"ppserver": SERVER_DEST_B64, "ppclient": CLIENT_DEST_B64}
+UNKNOWN_DEST = "zpk544zs7zsh2pluudh4n64tsg7xtjl3vrwjqu6dggouya5qf3cq.b32.i2p"
+OFFLINE_DEST = "9ZI1KN~C6ITmw2xGljY1p~36anL3uXpItFUschg0-~-ly4Q0Bh0wtbja6MJNZrAkRrAYUia9e1uugv5U1X9A1Q4Bt3JbrNJ1ouTx~PO4Pv-aWgKaB4rfluN3dPKutpLWRTz6d-rWIC-Wim7Gb8FwauPG29ZVRiWV8tR16ZmKUGNQPaZrL2M5Hy9bgBhkcoPKeNsUl1obc4TBO1sg5rtaxV7qDRUk8cG0kOHrl3u9VIuxAAehhqXYScaIMLfw18GooJZof1IrSQOmCmhiJAk9oEuAh1NAsvZCdVRWe1xRSw~MQRnb6YzdgFERGS0SIqTTBaIk444WEsPFys2ImWUR~e2rp4MTfgZAP3TsS6cdequ5w3lmOu-Ap30Nc7n4yAAR0rYOOT8gRVbE9zLN7VncYRYwkHwNWg~bTMb0yxvDGeXVHRlahAtAJUwaF7VW7oloAmJzbjIgRRfWdp621mAh-IarKzieCS1HxrwtaW3dtBJ8SdICWZ663-YAsXkOL67RBQAEAAcAAA=="
+
+
+SESSION_DEST_MAP = {
+    "ppserver": SERVER_DEST_B64, "ppclient": CLIENT_DEST_B64, 
+    "unknowntest": CLIENT_DEST_B64, 
+    "offlinetest": CLIENT_DEST_B64
+}
 
 async def fake_sam_server_handler(reader, writer):
     session = None
@@ -28,8 +37,13 @@ async def fake_sam_server_handler(reader, writer):
             if msg.cmd == "HELLO":
                 writer.write(b"HELLO REPLY RESULT=OK VERSION=3.1\n")
             elif msg.cmd == "NAMING" and msg.action == "LOOKUP":
-                writer.write("NAMING REPLY RESULT=OK NAME=ME VALUE={}\n".format(
-                    SERVER_DEST.base64).encode())
+                if msg["NAME"] == SERVER_DEST.base32 + ".b32.i2p":
+                    writer.write("NAMING REPLY RESULT=OK NAME=ME VALUE={}\n".format(
+                        SERVER_DEST.base64).encode())
+                elif msg["NAME"] == UNKNOWN_DEST:
+                    writer.write("NAMING REPLY RESULT=INVALID_KEY NAME={}\n".format(
+                        UNKNOWN_DEST).encode())
+
             elif msg.cmd == "SESSION" and msg.action == "CREATE":
                 session = msg["ID"]
                 writer.write("SESSION STATUS RESULT=OK DESTINATION={}\n".format(
@@ -48,6 +62,8 @@ async def fake_sam_server_handler(reader, writer):
                 if session == "ppclient":
                     writer.write(b"STREAM STATUS RESULT=OK\n")
                     data_transfer = True
+                elif session == "offlinetest":
+                    writer.write(b"STREAM STATUS RESULT=CANT_REACH_PEER\n")
         else:
             if data == b"PING":
                 writer.write(b"PONG")
@@ -57,21 +73,28 @@ async def fake_sam_server_handler(reader, writer):
 class TestFuncPingPong(unittest.TestCase):
 
     def setUp(self):
-        self.sam_address = ("127.0.0.1", 19132)
         self.loop = asyncio.new_event_loop()
+        self.real_sam = os.getenv("REAL_SAM")
+        if not self.real_sam:
+            self.sam_address = ("127.0.0.1", 19132)
+        else:
+            self.sam_address = i2plib.sam.DEFAULT_ADDRESS
 
     async def runner(self, coro, *args, **kwargs):
-        sam_server = await asyncio.start_server(
-            fake_sam_server_handler, *self.sam_address, loop=self.loop)
+        if not self.real_sam:
+            sam_server = await asyncio.start_server(
+                fake_sam_server_handler, *self.sam_address, loop=self.loop)
 
         await coro(*args, **kwargs)
 
-        sam_server.close()
-        await sam_server.wait_closed()
+        if not self.real_sam:
+            sam_server.close()
+            await sam_server.wait_closed()
 
         for t in asyncio.Task.all_tasks(loop=self.loop):
             if t != asyncio.Task.current_task(loop=self.loop):
                 await t
+
 
     def test_coroutines_ping_pong(self):
         async def coroutines_test():
@@ -89,7 +112,6 @@ class TestFuncPingPong(unittest.TestCase):
             incoming = await server_reader.read(BUFFER_SIZE)
             dest, request = incoming.split(b"\n", 1)
             remote_destination = i2plib.Destination(dest.decode())
-            self.assertEqual(remote_destination.base32, CLIENT_DEST.base32)
             if not request:
                 request = await server_reader.read(BUFFER_SIZE)
             self.assertEqual(request, b"PING")
@@ -113,7 +135,6 @@ class TestFuncPingPong(unittest.TestCase):
                         incoming = await s.read(BUFFER_SIZE)
                         dest, request = incoming.split(b"\n", 1)
                         remote_destination = i2plib.Destination(dest.decode())
-                        self.assertEqual(remote_destination.base32, CLIENT_DEST.base32)
                         if not request:
                             request = await s.read(BUFFER_SIZE)
                         self.assertEqual(request, b"PING")
@@ -134,6 +155,34 @@ class TestFuncPingPong(unittest.TestCase):
             await server_task
 
         self.loop.run_until_complete(self.runner(context_managers_test))
+
+    def test_unknown_dest(self):
+        async def coro():
+            _, client_session_writer = await i2plib.create_session("unknowntest", 
+                sam_address=self.sam_address, loop=self.loop)
+            with self.assertRaises(i2plib.InvalidKey):
+                client_reader, client_writer = await i2plib.stream_connect("unknowntest",
+                        UNKNOWN_DEST, sam_address=self.sam_address, loop=self.loop)
+                client_writer.close()
+
+            client_session_writer.close()
+
+        self.loop.run_until_complete(self.runner(coro))
+
+    def test_offline_dest(self):
+        async def coro():
+            _, client_session_writer = await i2plib.create_session("offlinetest", 
+                sam_address=self.sam_address, loop=self.loop)
+            with self.assertRaises(i2plib.CantReachPeer):
+                client_reader, client_writer = await i2plib.stream_connect("offlinetest",
+                        OFFLINE_DEST, sam_address=self.sam_address, loop=self.loop)
+                client_writer.close()
+
+            client_session_writer.close()
+
+        self.loop.run_until_complete(self.runner(coro))
+
+
 
     def tearDown(self):
         self.loop.stop()

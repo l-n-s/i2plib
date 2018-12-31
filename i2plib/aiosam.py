@@ -23,6 +23,7 @@ async def get_sam_socket(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None):
     if reply.ok:
         return (reader, writer)
     else:
+        writer.close()
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
 
 async def dest_lookup(domain, sam_address=i2plib.sam.DEFAULT_ADDRESS, 
@@ -39,8 +40,8 @@ async def dest_lookup(domain, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.naming_lookup(domain))
     reply = parse_reply(await reader.read(BUFFER_SIZE))
+    writer.close()
     if reply.ok:
-        writer.close()
         return i2plib.sam.Destination(reply["VALUE"])
     else:
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
@@ -107,6 +108,7 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
         logging.debug("Session created {}".format(session_name))
         return (reader, writer)
     else:
+        writer.close()
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
 
 async def stream_connect(session_name, destination, 
@@ -133,6 +135,7 @@ async def stream_connect(session_name, destination,
         logging.debug("Stream connected {}".format(session_name))
         return (reader, writer)
     else:
+        writer.close()
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
 
 async def stream_accept(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
@@ -150,6 +153,7 @@ async def stream_accept(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     if reply.ok:
         return (reader, writer)
     else:
+        writer.close()
         raise i2plib.exceptions.SAM_EXCEPTIONS[reply["RESULT"]]()
 
 ### Context managers
