@@ -31,12 +31,3 @@ def get_sam_address():
     value = os.getenv("I2P_SAM_ADDRESS")
     return address_from_string(value) if value else i2plib.sam.DEFAULT_ADDRESS
 
-def get_new_destination(sam_address=i2plib.sam.DEFAULT_ADDRESS, 
-                        sig_type=i2plib.sam.Destination.default_sig_type):
-    """Generates new I2P destination of a chosen signature type"""
-    sam_socket = i2plib.sam.get_socket(sam_address)
-    sam_socket.send(i2plib.sam.dest_generate(sig_type))
-    a = i2plib.sam.get_response(sam_socket)
-    sam_socket.close()
-    return i2plib.sam.Destination(a['PRIV'], has_private_key=True)
-

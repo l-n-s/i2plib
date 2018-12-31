@@ -1,4 +1,3 @@
-import socket
 from base64 import b64decode, b64encode, b32encode
 from hashlib import sha256
 import struct
@@ -6,7 +5,6 @@ import random
 import string
 import re
 
-from .exceptions import SAM_EXCEPTIONS
 
 I2P_B64_CHARS = "-~"
 
@@ -51,36 +49,12 @@ class Message(object):
     def __repr__(self):
         return self._reply_string
 
-def get_socket(sam_address=None):
-    """Return new SAM socket"""
-    sam_address = sam_address or DEFAULT_ADDRESS
-    sam_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sam_socket.connect(sam_address)
-    sam_socket.send(hello(DEFAULT_MIN_VER, DEFAULT_MAX_VER))
-    a = get_response(sam_socket)
-    if a.ok:
-        return sam_socket
-    else:
-        raise SAM_EXCEPTIONS[a["RESULT"]]()
-
-def lookup(sam_socket, name):
-    """Lookup destination by name"""
-    sam_socket.send(naming_lookup(name))
-    a = get_response(sam_socket)
-    if a.ok:
-        return Destination(a["VALUE"])
-    else:
-        raise SAM_EXCEPTIONS[a["RESULT"]]()
 
 def generate_session_id(length=6):
     """Generate random session id"""
     rand = random.SystemRandom()
     sid = [rand.choice(string.ascii_letters) for _ in range(length)]
     return "i2plib-" + "".join(sid)
-
-def get_response(sam_socket):
-    """Read message from SAM API"""
-    return Message(sam_socket.recv(SAM_BUFSIZE))
 
 
 # SAM request messages
@@ -179,48 +153,4 @@ class PrivateKey(object):
         self.data = data if type(data) == bytes else i2p_b64decode(data)
         #: Base64 encoded private key
         self.base64 = data if type(data) == str else i2p_b64encode(data)
-
-class StreamSession(object):
-
-    def __init__(self, sam_address=DEFAULT_ADDRESS, \
-            session_id=None, destination=TRANSIENT_DESTINATION, options="", \
-            min_ver=DEFAULT_MIN_VER, max_ver=DEFAULT_MAX_VER):
-        self.sam_address = sam_address
-        self.min_ver = min_ver
-        self.max_ver = max_ver
-        self.session_id = session_id or generate_session_id()
-        self._session_socket = get_socket(self.sam_address)
-        self._session_socket.send(
-            session_create("STREAM", self.session_id, destination, options))
-        a = get_response(self._session_socket)
-
-        if a.ok:
-            self.destination = a["DESTINATION"]
-        else:
-            raise SAM_EXCEPTIONS[a["RESULT"]]()
-
-    def _get_socket(self):
-        """New socket for this session"""
-        return get_socket(self.sam_address)
-
-    def connect(self, dest):
-        """Return new I2P stream to destination"""
-        sam_socket = self._get_socket()
-        sam_socket.send(stream_connect(self.session_id, dest, silent="false"))
-        a = get_response(sam_socket)
-        if a.ok:
-            return sam_socket
-        else:
-            raise SAM_EXCEPTIONS[a["RESULT"]]()
-
-    def accept(self):
-        """Return new accepting socket"""
-        sam_socket = self._get_socket()
-        sam_socket.send(stream_accept(self.session_id, silent="false"))
-        return sam_socket
-
-    def forward(self, session_id, port, options=""):
-        sam_socket = self._get_socket()
-        sam_socket.send(stream_forward(self.session_id, port, options))
-        return sam_socket
 

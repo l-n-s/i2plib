@@ -20,6 +20,7 @@ def serve_directory(server_address, path):
 def main(args):
     sam_address = i2plib.get_sam_address()
     server_address = ('127.0.0.1', i2plib.utils.get_free_port())
+    loop = asyncio.get_event_loop()
 
     if not os.path.isdir(args.web_directory):
         raise OSError("No such directory {}".format(args.web_directory))
@@ -27,7 +28,7 @@ def main(args):
     if args.key:
         dest = i2plib.Destination(path=args.key, has_private_key=True)
     else:
-        dest = i2plib.utils.get_new_destination(sam_address=sam_address)
+        dest = loop.run_until_complete(i2plib.new_destination(sam_address=sam_address, loop=loop))
 
     logging.info("Listening: {}.b32.i2p".format(dest.base32))
     logging.info("Server: {}:{}".format(server_address[0], server_address[1]))
@@ -38,7 +39,6 @@ def main(args):
     http_server_thread.daemon = True
     http_server_thread.start()
 
-    loop = asyncio.get_event_loop()
 
     tunnel = i2plib.ServerTunnel(server_address, 
         loop=loop, destination=dest, sam_address=sam_address)
