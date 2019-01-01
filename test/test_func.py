@@ -5,6 +5,7 @@ import os
 import i2plib
 import i2plib.sam
 import i2plib.utils
+import i2plib.tunnel
 
 BUFFER_SIZE = 65536
 REAL_SAM = os.getenv("REAL_SAM")
@@ -62,9 +63,11 @@ async def fake_sam_server_handler(reader, writer):
                     writer.write(b"STREAM STATUS RESULT=OK\n")
                     await asyncio.sleep(0.1)
                     writer.write("{}\n".format(CLIENT_DEST.base64).encode())
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(0.01)
                     data_transfer = True
                     writer.write(b"PING")
+                    await asyncio.sleep(0.01)
+                    writer.close()
                 elif session == "failedaccept":
                     writer.write(b"STREAM STATUS RESULT=I2P_ERROR\n")
             elif msg.cmd == "STREAM" and msg.action == "CONNECT":
@@ -232,7 +235,42 @@ class TestFuncPingPong(unittest.TestCase):
 
         self.runner(coro)
 
+    def test_ping_pong_tunnel(self):
+        async def coro():
+            async def pong_handler(reader, writer):
+                data = await reader.read(4096)
+                writer.write(b"PONG")
+                writer.close()
 
+            server_local_address = ("127.0.0.1", i2plib.utils.get_free_port())
+            client_local_address = ("127.0.0.1", i2plib.utils.get_free_port())
+            pong_server = await asyncio.start_server(
+                pong_handler, *server_local_address, loop=self.loop)
+
+            s_tunnel = i2plib.ServerTunnel(server_local_address, loop=self.loop, 
+                    session_name="ppserver",
+                    destination=SERVER_DEST, sam_address=self.sam_address)
+            c_tunnel = i2plib.ClientTunnel(SERVER_DEST.base64, client_local_address,
+                    session_name="ppclient",
+                    loop=self.loop, 
+                    destination=CLIENT_DEST, sam_address=self.sam_address)
+
+            await s_tunnel.run()
+            await c_tunnel.run()
+            await asyncio.sleep(0.1)
+
+            reader, writer = await asyncio.open_connection(*client_local_address)
+            writer.write(b"PING")
+            data = await reader.read(4096)
+            writer.close()
+
+            pong_server.close()
+            await pong_server.wait_closed()
+            c_tunnel.stop()
+            s_tunnel.stop()
+            await asyncio.sleep(0.1)
+
+        self.runner(coro)
 
 
     def tearDown(self):

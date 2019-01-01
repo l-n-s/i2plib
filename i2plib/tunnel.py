@@ -62,7 +62,6 @@ class I2PTunnel(object):
     def stop(self):
         """Stop the tunnel"""
         self.session_writer.close()
-        self.future.cancel()
 
 class ClientTunnel(I2PTunnel):
     """Client tunnel, a subclass of i2plib.tunnel.I2PTunnel
@@ -95,10 +94,12 @@ class ClientTunnel(I2PTunnel):
             asyncio.ensure_future(proxy_data(client_reader, remote_writer),
                                   loop=self.loop)
 
-        self.future = asyncio.ensure_future(
-                    asyncio.start_server(handle_client, *self.local_address, 
-                                         loop=self.loop),
-                    loop=self.loop)
+        self.server = await asyncio.start_server(handle_client, *self.local_address, 
+                                         loop=self.loop)
+
+    def stop(self):
+        super().stop()
+        self.server.close()
 
 class ServerTunnel(I2PTunnel):
     """Server tunnel, a subclass of i2plib.tunnel.I2PTunnel
@@ -146,7 +147,11 @@ class ServerTunnel(I2PTunnel):
                 asyncio.ensure_future(handle_client(
                     incoming, client_reader, client_writer), loop=self.loop)
 
-        self.future = asyncio.ensure_future(server_loop(), loop=self.loop)
+        self.server_loop = asyncio.ensure_future(server_loop(), loop=self.loop)
+
+    def stop(self):
+        super().stop()
+        self.server_loop.cancel()
 
 
 if __name__ == '__main__':
