@@ -3,10 +3,16 @@ language: python
 sudo: required
 dist: xenial
 
-python:
-  - "3.5"
-  - "3.6"
-  - "3.7"
+matrix:
+  include:
+    - python: 3.7
+      env: TOXENV=py,codecov
+    - python: 3.6
+      env: TOXENV=py,codecov
+    - python: 3.5
+      env: TOXENV=py,codecov
 
-install: pip install -e .
-script: python -m unittest
+install: 
+  - pip install tox
+
+script: tox
