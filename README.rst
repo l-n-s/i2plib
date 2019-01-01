@@ -6,8 +6,8 @@ i2plib
 .. image:: https://readthedocs.org/projects/i2plib/badge/?version=latest
    :target: https://i2plib.readthedocs.io/en/latest/
    :alt: Latest Read The Docs
-.. image:: https://codecov.io/github/requests/requests/coverage.svg?branch=master
-    :target: https://codecov.io/github/requests/requests
+.. image:: https://codecov.io/github/l-n-s/i2plib/coverage.svg?branch=master
+    :target: https://codecov.io/github/l-n-s/i2plib
 
 i2plib is a modern asynchronous library for building I2P applications. 
 
