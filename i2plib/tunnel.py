@@ -139,13 +139,16 @@ class ServerTunnel(I2PTunnel):
                 client_writer.close()
 
         async def server_loop():
-            while True:
-                client_reader, client_writer = await i2plib.aiosam.stream_accept(
-                        self.session_name, sam_address=self.sam_address, 
-                        loop=self.loop)
-                incoming = await client_reader.read(BUFFER_SIZE)
-                asyncio.ensure_future(handle_client(
-                    incoming, client_reader, client_writer), loop=self.loop)
+            try:
+                while True:
+                    client_reader, client_writer = await i2plib.aiosam.stream_accept(
+                            self.session_name, sam_address=self.sam_address, 
+                            loop=self.loop)
+                    incoming = await client_reader.read(BUFFER_SIZE)
+                    asyncio.ensure_future(handle_client(
+                        incoming, client_reader, client_writer), loop=self.loop)
+            except asyncio.CancelledError:
+                pass
 
         self.server_loop = asyncio.ensure_future(server_loop(), loop=self.loop)
 
