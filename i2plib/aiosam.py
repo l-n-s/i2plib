@@ -8,6 +8,9 @@ import i2plib.utils
 BUFFER_SIZE = 65536
 
 def parse_reply(data):
+    if not data:
+        raise ConnectionAbortedError("Empty response: SAM API went offline")
+
     return i2plib.sam.Message(data.split(b"\n")[0].decode())
 
 async def get_sam_socket(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None):
