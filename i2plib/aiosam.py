@@ -5,13 +5,18 @@ import i2plib.sam
 import i2plib.exceptions
 import i2plib.utils
 
-BUFFER_SIZE = 65536
-
 def parse_reply(data):
     if not data:
         raise ConnectionAbortedError("Empty response: SAM API went offline")
 
-    return i2plib.sam.Message(data.split(b"\n")[0].decode())
+    try:
+        msg = i2plib.sam.Message(data.decode().strip())
+        logging.debug("SAM reply: "+str(msg))
+    except:
+        raise ConnectionAbortedError("Invalid SAM response")
+
+    return msg
+
 
 async def get_sam_socket(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None):
     """A couroutine used to create a new SAM socket.
@@ -22,7 +27,7 @@ async def get_sam_socket(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None):
     """
     reader, writer = await asyncio.open_connection(*sam_address, loop=loop)
     writer.write(i2plib.sam.hello("3.1", "3.1"))
-    reply = parse_reply(await reader.read(BUFFER_SIZE))
+    reply = parse_reply(await reader.readline())
     if reply.ok:
         return (reader, writer)
     else:
@@ -42,7 +47,7 @@ async def dest_lookup(domain, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     """
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.naming_lookup(domain))
-    reply = parse_reply(await reader.read(BUFFER_SIZE))
+    reply = parse_reply(await reader.readline())
     writer.close()
     if reply.ok:
         return i2plib.sam.Destination(reply["VALUE"])
@@ -61,7 +66,7 @@ async def new_destination(sam_address=i2plib.sam.DEFAULT_ADDRESS, loop=None,
     """
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.dest_generate(sig_type))
-    reply = parse_reply(await reader.read(BUFFER_SIZE))
+    reply = parse_reply(await reader.readline())
     writer.close()
     return i2plib.sam.Destination(reply["PRIV"], has_private_key=True)
 
@@ -102,7 +107,7 @@ async def create_session(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     writer.write(i2plib.sam.session_create(
             style, session_name, dest_string, options))
 
-    reply = parse_reply(await reader.read(BUFFER_SIZE))
+    reply = parse_reply(await reader.readline())
     if reply.ok:
         if not destination:
             destination = i2plib.sam.Destination(
@@ -133,7 +138,7 @@ async def stream_connect(session_name, destination,
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.stream_connect(session_name, destination.base64,
                                            silent="false"))
-    reply = parse_reply(await reader.read(BUFFER_SIZE))
+    reply = parse_reply(await reader.readline())
     if reply.ok:
         logging.debug("Stream connected {}".format(session_name))
         return (reader, writer)
@@ -152,7 +157,7 @@ async def stream_accept(session_name, sam_address=i2plib.sam.DEFAULT_ADDRESS,
     """
     reader, writer = await get_sam_socket(sam_address, loop)
     writer.write(i2plib.sam.stream_accept(session_name, silent="false"))
-    reply = parse_reply(await reader.read(BUFFER_SIZE))
+    reply = parse_reply(await reader.readline())
     if reply.ok:
         return (reader, writer)
     else:
