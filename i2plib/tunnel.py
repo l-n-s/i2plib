@@ -5,6 +5,7 @@ import argparse
 import i2plib.sam 
 import i2plib.aiosam
 import i2plib.utils
+from i2plib.log import logger
 
 BUFFER_SIZE = 65536
 
@@ -17,13 +18,13 @@ async def proxy_data(reader, writer):
                 break
             writer.write(data)
     except Exception as e:
-        logging.debug('proxy_data_task exception {}'.format(e))
+        logger.debug('proxy_data_task exception {}'.format(e))
     finally:
         try:
             writer.close()
         except RuntimeError:
             pass
-        logging.debug('close connection')
+        logger.debug('close connection')
 
 class I2PTunnel(object):
     """Base I2P Tunnel object, not to be used directly
@@ -121,7 +122,7 @@ class ServerTunnel(I2PTunnel):
             # data and dest may come in one chunk
             dest, data = incoming.split(b"\n", 1) 
             remote_destination = i2plib.sam.Destination(dest.decode())
-            logging.debug("{} client connected: {}.b32.i2p".format(
+            logger.debug("{} client connected: {}.b32.i2p".format(
                 self.session_name, remote_destination.base32))
 
             try:
