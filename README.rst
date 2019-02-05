@@ -47,6 +47,9 @@ Connecting to a remote I2P destination
         data = await reader.read(4096)
         print(data.decode())
 
+        # close the connection
+        writer.close()
+
     # run event loop
     loop = asyncio.get_event_loop()
     loop.run_until_complete(connect_test("dummy.i2p"))
@@ -70,19 +73,18 @@ Accept connections in I2P
         reader, writer = await i2plib.stream_accept(session_name)
         
         # first string on a client connection always contains clients I2P destination
-        incoming = await reader.read(4096)
-        dest, data = incoming.split(b"\n", 1)
-        remote_destination = i2plib.Destination(dest.decode())
+        dest = await reader.readline()
+        remote_destination = i2plib.Destination(dest.decode().strip())
 
-        # destination and data may come in one chunck, if not - we wait for the actual
-        # incoming data
-        if not data:
-            data = await reader.read(4096)
+        # read for the actual incoming data from the client
+        data = await reader.read(4096)
 
         print(data.decode())
 
-        # send data to the client
+        # send data back
         writer.write(b"PONG")
+
+        # close the connection
         writer.close()
 
     # run event loop
